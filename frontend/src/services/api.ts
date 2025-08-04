@@ -11,7 +11,7 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token')
+  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -24,7 +24,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token')
-      window.location.reload()
+      sessionStorage.removeItem('auth_token')
+      // Ne pas recharger automatiquement, laisser le contexte gérer
     }
     return Promise.reject(error)
   }
@@ -34,7 +35,7 @@ export interface User {
   id: string
   email: string
   name: string
-  role: 'customer' | 'admin'
+  roles: string[]
   is_active: boolean
   is_verified: boolean
   created_at: string
@@ -45,7 +46,7 @@ export interface CreateSandboxRequest {
   email: string
   duration_hours: number
   description?: string
-  software_type?: 'keycloak'
+  software_type_id: string
 }
 
 export interface SandboxResponse {
@@ -56,7 +57,7 @@ export interface SandboxResponse {
   status: 'running' | 'stopped' | 'expired'
   price: number
   user_id: string
-  software_type: 'keycloak'
+  software_type_id: string
   created_at: string
   expires_at: string
   access_url: string
@@ -95,6 +96,14 @@ export const updateProfile = async (name: string): Promise<any> => {
   return response.data
 }
 
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<any> => {
+  const response = await api.post('/api/v1/auth/change-password', {
+    current_password: currentPassword,
+    new_password: newPassword
+  })
+  return response.data
+}
+
 export const deleteAccount = async (): Promise<void> => {
   await api.delete('/api/v1/auth/account')
 }
@@ -113,6 +122,15 @@ export const apiService = {
   async getSandboxes(): Promise<SandboxResponse[]> {
     const response = await api.get('/api/v1/sandboxes/')
     return response.data
+  },
+
+  async getAllSandboxes(): Promise<SandboxResponse[]> {
+    const response = await api.get('/api/v1/admin/sandboxes/')
+    return response.data
+  },
+
+  async deleteSandbox(sandboxId: string): Promise<void> {
+    await api.delete(`/api/v1/admin/sandboxes/${sandboxId}`)
   },
 
   async getSandbox(id: string): Promise<SandboxResponse> {
@@ -136,6 +154,7 @@ export const apiService = {
   logout,
   getCurrentUser,
   updateProfile,
+  changePassword,
   deleteAccount,
   
   // Pricing operations
@@ -147,8 +166,22 @@ export const apiService = {
     return response.data
   },
 
-  async updateUserRole(userId: string, role: 'customer' | 'admin'): Promise<void> {
-    await api.put(`/api/v1/admin/users/${userId}/role`, { role })
+  async getRoles(): Promise<{id: string, name: string, description: string}[]> {
+    const response = await api.get('/api/v1/admin/roles')
+    return response.data
+  },
+
+  async getSoftwareTypes(): Promise<{id: string, name: string, description: string, base_price_per_hour: number}[]> {
+    const response = await api.get('/api/v1/software-types')
+    return response.data
+  },
+
+  async addRoleToUser(userId: string, roleName: string): Promise<void> {
+    await api.post(`/api/v1/admin/users/${userId}/roles`, { role_name: roleName })
+  },
+
+  async removeRoleFromUser(userId: string, roleName: string): Promise<void> {
+    await api.delete(`/api/v1/admin/users/${userId}/roles/${roleName}`)
   },
 
   async activateUser(userId: string): Promise<void> {

@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timedelta
 
 from app.database import get_db
-from app.models.sandbox import Sandbox, SandboxStatus, SoftwareType
+from app.models.sandbox import Sandbox
 from app.models.user import User
 from app.schemas.sandbox import SandboxCreate, SandboxResponse, SandboxUpdate
 from app.services.docker_service import DockerService
@@ -32,7 +32,7 @@ async def create_sandbox(
         expires_at = datetime.utcnow() + timedelta(hours=sandbox_data.duration_hours)
         
         # Calculer le prix
-        price = PricingService.calculate_price(sandbox_data.duration_hours)
+        price = PricingService.calculate_price(db, sandbox_data.software_type_id, sandbox_data.duration_hours)
         
         # Créer l'enregistrement en base
         db_sandbox = Sandbox(
@@ -41,11 +41,11 @@ async def create_sandbox(
             email=current_user.email,  # Utiliser l'email de l'utilisateur connecté
             description=sandbox_data.description,
             duration_hours=sandbox_data.duration_hours,
-            software_type=sandbox_data.software_type,
+            software_type_id=sandbox_data.software_type_id,
             price=price,
             user_id=current_user.id,
             expires_at=expires_at,
-            status=SandboxStatus.RUNNING
+            status="running"
         )
         
         db.add(db_sandbox)
@@ -73,7 +73,7 @@ async def create_sandbox(
             
         except Exception as e:
             # En cas d'erreur, marquer comme arrêtée
-            db_sandbox.status = SandboxStatus.STOPPED
+            db_sandbox.status = "stopped"
             db.commit()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -92,8 +92,8 @@ async def create_sandbox(
 @router.get("/sandboxes/", response_model=List[SandboxResponse])
 async def get_sandboxes(
     current_user: User = Depends(get_current_user),
-    status_filter: Optional[SandboxStatus] = Query(None, description="Filtrer par statut"),
-    software_type_filter: Optional[SoftwareType] = Query(None, description="Filtrer par type de logiciel"),
+    status_filter: Optional[str] = Query(None, description="Filtrer par statut"),
+    software_type_filter: Optional[str] = Query(None, description="Filtrer par type de logiciel"),
     db: Session = Depends(get_db)
 ):
     """Récupérer la liste des sandboxes de l'utilisateur connecté"""
@@ -193,6 +193,22 @@ async def update_sandbox(
     return sandbox
 
 @router.get("/pricing")
-async def get_pricing():
+async def get_pricing(db: Session = Depends(get_db)):
     """Obtenir les informations de pricing"""
-    return PricingService.get_pricing_info() 
+    return PricingService.get_pricing_info(db)
+
+@router.get("/software-types")
+async def get_software_types(db: Session = Depends(get_db)):
+    """Obtenir les types de logiciels disponibles (public)"""
+    from app.services.software_type_service import SoftwareTypeService
+    software_types = SoftwareTypeService.get_all_software_types(db)
+    return [
+        {
+            "id": st.id,
+            "name": st.name,
+            "description": st.description,
+            "base_price_per_hour": st.base_price_per_hour,
+            "is_active": st.is_active
+        }
+        for st in software_types
+    ] 

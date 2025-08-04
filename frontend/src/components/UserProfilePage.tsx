@@ -27,6 +27,14 @@ export default function UserProfilePage() {
   const [formData, setFormData] = useState({
     name: ''
   })
+  const [passwordFormData, setPasswordFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   useEffect(() => {
     loadUserProfile()
@@ -58,6 +66,51 @@ export default function UserProfilePage() {
       setError('Erreur lors de la mise à jour du profil')
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsChangingPassword(true)
+    setError(null)
+    setSuccess(null)
+    setPasswordError(null)
+
+    // Vérifier que les mots de passe correspondent
+    if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+      setPasswordError('Les nouveaux mots de passe ne correspondent pas')
+      setIsChangingPassword(false)
+      return
+    }
+
+    // Vérifier la longueur du mot de passe
+    if (passwordFormData.newPassword.length < 6) {
+      setPasswordError('Le nouveau mot de passe doit contenir au moins 6 caractères')
+      setIsChangingPassword(false)
+      return
+    }
+
+    // Vérifier que le nouveau mot de passe est différent de l'ancien
+    if (passwordFormData.currentPassword === passwordFormData.newPassword) {
+      setPasswordError('Le nouveau mot de passe doit être différent de l\'ancien')
+      setIsChangingPassword(false)
+      return
+    }
+
+    try {
+      await apiService.changePassword(passwordFormData.currentPassword, passwordFormData.newPassword)
+      setSuccess('Mot de passe modifié avec succès')
+      setShowPasswordModal(false)
+      setPasswordFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Une erreur inattendue s\'est produite lors de la modification du mot de passe. Veuillez réessayer.'
+      setPasswordError(errorMessage)
+    } finally {
+      setIsChangingPassword(false)
     }
   }
 
@@ -230,6 +283,20 @@ export default function UserProfilePage() {
               </button>
               <button
                 onClick={() => {
+                  setShowPasswordModal(true)
+                  setPasswordError(null)
+                  setPasswordFormData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                  })
+                }}
+                className="w-full btn-primary"
+              >
+                Modifier mon mot de passe
+              </button>
+              <button
+                onClick={() => {
                   localStorage.removeItem('auth_token')
                   window.location.reload()
                 }}
@@ -323,6 +390,156 @@ export default function UserProfilePage() {
                       {isDeleting ? 'Suppression...' : 'Supprimer définitivement'}
                     </button>
                   </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Modal de modification de mot de passe */}
+      <Transition appear show={showPasswordModal} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => {
+          setShowPasswordModal(false)
+          setPasswordError(null)
+          setPasswordFormData({
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          })
+        }}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-dark-surface p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title as="h3" className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    Modifier mon mot de passe
+                  </Dialog.Title>
+
+                  {passwordError && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+                      <div className="text-red-800 dark:text-red-200 text-sm">{passwordError}</div>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleChangePassword} className="space-y-4">
+                    <div>
+                      <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Mot de passe actuel
+                      </label>
+                      <input
+                        type="password"
+                        id="currentPassword"
+                        value={passwordFormData.currentPassword}
+                        onChange={(e) => setPasswordFormData({ ...passwordFormData, currentPassword: e.target.value })}
+                        className="input-field"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nouveau mot de passe
+                      </label>
+                      <input
+                        type="password"
+                        id="newPassword"
+                        value={passwordFormData.newPassword}
+                        onChange={(e) => setPasswordFormData({ ...passwordFormData, newPassword: e.target.value })}
+                        className={`input-field ${
+                          passwordFormData.newPassword && 
+                          passwordFormData.currentPassword && 
+                          passwordFormData.newPassword === passwordFormData.currentPassword
+                            ? 'border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500'
+                            : ''
+                        }`}
+                        required
+                        minLength={6}
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Le mot de passe doit contenir au moins 6 caractères
+                      </p>
+                      {passwordFormData.newPassword && 
+                       passwordFormData.currentPassword && 
+                       passwordFormData.newPassword === passwordFormData.currentPassword && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                          Le nouveau mot de passe doit être différent de l'ancien
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Confirmer le nouveau mot de passe
+                      </label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        value={passwordFormData.confirmPassword}
+                        onChange={(e) => setPasswordFormData({ ...passwordFormData, confirmPassword: e.target.value })}
+                        className={`input-field ${
+                          passwordFormData.confirmPassword && 
+                          passwordFormData.newPassword && 
+                          passwordFormData.confirmPassword !== passwordFormData.newPassword
+                            ? 'border-red-300 dark:border-red-600 focus:ring-red-500 focus:border-red-500'
+                            : ''
+                        }`}
+                        required
+                      />
+                      {passwordFormData.confirmPassword && 
+                       passwordFormData.newPassword && 
+                       passwordFormData.confirmPassword !== passwordFormData.newPassword && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                          Les mots de passe ne correspondent pas
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex space-x-3 mt-6">
+                      <button
+                        type="button"
+                        className="flex-1 btn-secondary"
+                        onClick={() => {
+                          setShowPasswordModal(false)
+                          setPasswordError(null)
+                          setPasswordFormData({
+                            currentPassword: '',
+                            newPassword: '',
+                            confirmPassword: ''
+                          })
+                        }}
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 btn-primary"
+                        disabled={isChangingPassword}
+                      >
+                        {isChangingPassword ? 'Modification...' : 'Modifier le mot de passe'}
+                      </button>
+                    </div>
+                  </form>
                 </Dialog.Panel>
               </Transition.Child>
             </div>

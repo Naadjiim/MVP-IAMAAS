@@ -6,9 +6,9 @@ echo "🚀 Démarrage de IAMAAS Backend..."
 echo "⏳ Attente de la base de données..."
 sleep 10
 
-# Initialiser l'utilisateur admin
-echo "👤 Initialisation de l'utilisateur admin..."
-python3 /app/init_admin_docker.py
+# Initialiser la base de données avec la nouvelle architecture
+echo "🗄️ Initialisation de la base de données..."
+python3 /app/init_database.py
 
 # Lancer l'API
 echo "🌐 Lancement de l'API..."

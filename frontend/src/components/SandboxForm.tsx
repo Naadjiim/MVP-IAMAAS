@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { apiService } from '@/services/api'
 import PricingDisplay from './PricingDisplay'
+import SuccessModal from './SuccessModal'
 
 interface SandboxFormData {
   name: string
   duration_hours: number
   description: string
-  software_type: 'keycloak'
+  software_type_id: string
 }
 
 export default function SandboxForm() {
@@ -16,29 +17,65 @@ export default function SandboxForm() {
     name: '',
     duration_hours: 24,
     description: '',
-    software_type: 'keycloak'
+    software_type_id: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [currentPrice, setCurrentPrice] = useState<number>(0)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [createdSandbox, setCreatedSandbox] = useState<any>(null)
+
+  // Récupérer l'ID du type de logiciel Keycloak au chargement
+  useEffect(() => {
+    const loadKeycloakSoftwareType = async () => {
+      try {
+        const softwareTypes = await apiService.getSoftwareTypes()
+        const keycloakType = softwareTypes.find(type => type.name.toLowerCase() === 'keycloak')
+        console.log('Types de logiciels chargés:', softwareTypes)
+        console.log('Type Keycloak trouvé:', keycloakType)
+        if (keycloakType) {
+          setFormData(prev => ({ ...prev, software_type_id: keycloakType.id }))
+          console.log('software_type_id défini:', keycloakType.id)
+        } else {
+          console.error('Type Keycloak non trouvé dans la liste')
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des types de logiciels:', error)
+      }
+    }
+    
+    loadKeycloakSoftwareType()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setMessage(null)
 
-    try {
-      const response = await apiService.createSandbox(formData)
+    // Vérifier que software_type_id est défini
+    if (!formData.software_type_id) {
       setMessage({
-        type: 'success',
-        text: `Sandbox créée avec succès ! Lien d'accès : ${response.access_url}`
+        type: 'error',
+        text: 'Erreur : Type de logiciel non défini. Veuillez recharger la page.'
       })
-      setFormData({
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      console.log('Envoi des données:', formData)
+      const response = await apiService.createSandbox(formData)
+      console.log('Réponse reçue:', response)
+      setCreatedSandbox(response)
+      setShowSuccessModal(true)
+      setFormData(prev => ({
+        ...prev,
         name: '',
         duration_hours: 24,
         description: ''
-      })
+      }))
     } catch (error) {
+      console.error('Erreur lors de la création de la sandbox:', error)
       setMessage({
         type: 'error',
         text: 'Erreur lors de la création de la sandbox. Veuillez réessayer.'
@@ -92,6 +129,12 @@ export default function SandboxForm() {
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             D'autres options seront disponibles prochainement
           </p>
+          {/* Champ caché pour l'ID du type de logiciel */}
+          <input
+            type="hidden"
+            name="software_type_id"
+            value={formData.software_type_id}
+          />
         </div>
 
         <div>
@@ -160,6 +203,17 @@ export default function SandboxForm() {
           </button>
         </div>
       </form>
+      
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        sandbox={createdSandbox}
+        onViewSandboxes={() => {
+          setShowSuccessModal(false)
+          // Naviguer vers la liste des sandboxes
+          window.location.href = '/?tab=list'
+        }}
+      />
     </div>
   )
 } 

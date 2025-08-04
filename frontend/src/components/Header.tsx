@@ -5,6 +5,7 @@ import AuthModal from './AuthModal'
 import UserProfile from './UserProfile'
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface User {
   id: string
@@ -13,23 +14,8 @@ interface User {
   avatar?: string
 }
 
-interface HeaderProps {
-  user: User | null
-  onLogin: (email: string, password: string) => Promise<void>
-  onRegister: (email: string, password: string, name: string) => Promise<void>
-  onGoogleLogin: () => Promise<void>
-  onLogout: () => void
-  isLoading: boolean
-}
-
-export default function Header({ 
-  user, 
-  onLogin, 
-  onRegister, 
-  onGoogleLogin, 
-  onLogout, 
-  isLoading 
-}: HeaderProps) {
+export default function Header() {
+  const { user, isLoading, isAuthenticated, login, register, logout } = useAuth()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const { theme, toggleTheme } = useTheme()
 
@@ -63,8 +49,8 @@ export default function Header({
               </button>
 
               {/* Auth */}
-              {user ? (
-                <UserProfile user={user} onLogout={onLogout} />
+              {isAuthenticated && user ? (
+                <UserProfile user={user} onLogout={logout} />
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
@@ -83,9 +69,9 @@ export default function Header({
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        onLogin={onLogin}
-        onRegister={onRegister}
-        onGoogleLogin={onGoogleLogin}
+        onLogin={login}
+        onRegister={register}
+        onGoogleLogin={() => {}} // TODO: Implémenter Google login
         isLoading={isLoading}
       />
     </>

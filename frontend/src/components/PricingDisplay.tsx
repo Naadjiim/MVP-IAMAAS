@@ -3,14 +3,20 @@
 import { useEffect, useState } from 'react'
 import { apiService } from '@/services/api'
 
-interface PricingTier {
+interface PricingOption {
   duration_hours: number
-  final_price: number
-  price_per_hour: number
+  price: number
+  is_active: string
+}
+
+interface SoftwareTypePricing {
+  software_type_id: string
+  base_price_per_hour: number
+  pricing_options: PricingOption[]
 }
 
 interface PricingInfo {
-  pricing_tiers: PricingTier[]
+  [key: string]: SoftwareTypePricing
 }
 
 interface PricingDisplayProps {
@@ -39,15 +45,18 @@ export default function PricingDisplay({ durationHours, onPriceChange }: Pricing
   }, [])
 
   useEffect(() => {
-    if (pricingInfo) {
+    if (pricingInfo && pricingInfo.keycloak) {
+      const keycloakPricing = pricingInfo.keycloak
+      const pricingOptions = keycloakPricing.pricing_options.filter(option => option.is_active === "true")
+      
       // Trouver le prix pour la durée sélectionnée
-      const availableDurations = pricingInfo.pricing_tiers.map(tier => tier.duration_hours).sort((a, b) => a - b)
+      const availableDurations = pricingOptions.map(option => option.duration_hours).sort((a, b) => a - b)
       
       // Si la durée exacte existe, l'utiliser
-      const exactTier = pricingInfo.pricing_tiers.find(tier => tier.duration_hours === durationHours)
-      if (exactTier) {
-        setCurrentPrice(exactTier.final_price)
-        onPriceChange?.(exactTier.final_price)
+      const exactOption = pricingOptions.find(option => option.duration_hours === durationHours)
+      if (exactOption) {
+        setCurrentPrice(exactOption.price)
+        onPriceChange?.(exactOption.price)
         return
       }
       
@@ -56,10 +65,10 @@ export default function PricingDisplay({ durationHours, onPriceChange }: Pricing
         Math.abs(curr - durationHours) < Math.abs(prev - durationHours) ? curr : prev
       )
       
-      const closestTier = pricingInfo.pricing_tiers.find(tier => tier.duration_hours === closestDuration)
-      if (closestTier) {
-        setCurrentPrice(closestTier.final_price)
-        onPriceChange?.(closestTier.final_price)
+      const closestOption = pricingOptions.find(option => option.duration_hours === closestDuration)
+      if (closestOption) {
+        setCurrentPrice(closestOption.price)
+        onPriceChange?.(closestOption.price)
       }
     }
   }, [durationHours, pricingInfo, onPriceChange])
@@ -73,7 +82,7 @@ export default function PricingDisplay({ durationHours, onPriceChange }: Pricing
     )
   }
 
-  if (!pricingInfo) {
+  if (!pricingInfo || !pricingInfo.keycloak) {
     return (
       <div className="text-sm text-gray-500 dark:text-gray-400">
         Impossible de charger les informations de prix
@@ -82,22 +91,35 @@ export default function PricingDisplay({ durationHours, onPriceChange }: Pricing
   }
 
   const getPriceInfo = () => {
-    const exactTier = pricingInfo.pricing_tiers.find(tier => tier.duration_hours === durationHours)
-    if (exactTier) {
+    if (!pricingInfo || !pricingInfo.keycloak) {
+      return { pricePerHour: 0 }
+    }
+    
+    const keycloakPricing = pricingInfo.keycloak
+    const pricingOptions = keycloakPricing.pricing_options.filter(option => option.is_active === "true")
+    
+    const exactOption = pricingOptions.find(option => option.duration_hours === durationHours)
+    if (exactOption) {
       return {
-        pricePerHour: exactTier.price_per_hour
+        pricePerHour: exactOption.price / exactOption.duration_hours
       }
     }
     
     // Trouver la durée la plus proche
-    const availableDurations = pricingInfo.pricing_tiers.map(tier => tier.duration_hours).sort((a, b) => a - b)
+    const availableDurations = pricingOptions.map(option => option.duration_hours).sort((a, b) => a - b)
     const closestDuration = availableDurations.reduce((prev, curr) => 
       Math.abs(curr - durationHours) < Math.abs(prev - durationHours) ? curr : prev
     )
     
-    const closestTier = pricingInfo.pricing_tiers.find(tier => tier.duration_hours === closestDuration)
+    const closestOption = pricingOptions.find(option => option.duration_hours === closestDuration)
+    if (closestOption) {
+      return {
+        pricePerHour: closestOption.price / closestOption.duration_hours
+      }
+    }
+    
     return {
-      pricePerHour: closestTier?.price_per_hour || 0
+      pricePerHour: keycloakPricing.base_price_per_hour
     }
   }
 

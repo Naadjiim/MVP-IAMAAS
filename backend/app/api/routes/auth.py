@@ -15,10 +15,11 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     try:
         user = auth_service.create_user(user_data)
         token = auth_service.create_access_token(user)
+        user_response = auth_service.get_user_response(user)
         
         return AuthResponse(
             token=token,
-            user=UserResponse.from_orm(user)
+            user=user_response
         )
     except ValueError as e:
         raise HTTPException(
@@ -31,20 +32,21 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
     """Login user"""
     auth_service = AuthService(db)
     
-    user = auth_service.authenticate_user(user_data.email, user_data.password)
-    if not user:
+    try:
+        user = auth_service.authenticate_user(user_data.email, user_data.password)
+        token = auth_service.create_access_token(user)
+        user_response = auth_service.get_user_response(user)
+        
+        return AuthResponse(
+            token=token,
+            user=user_response
+        )
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    token = auth_service.create_access_token(user)
-    
-    return AuthResponse(
-        token=token,
-        user=UserResponse.from_orm(user)
-    )
 
 @router.post("/google", response_model=AuthResponse)
 async def google_login(google_data: GoogleLogin, db: Session = Depends(get_db)):
@@ -68,16 +70,21 @@ async def google_login(google_data: GoogleLogin, db: Session = Depends(get_db)):
     )
     
     token = auth_service.create_access_token(user)
+    user_response = auth_service.get_user_response(user)
     
     return AuthResponse(
         token=token,
-        user=UserResponse.from_orm(user)
+        user=user_response
     )
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user = Depends(get_current_user)):
+async def get_current_user_info(
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Get current user information"""
-    return UserResponse.from_orm(current_user)
+    auth_service = AuthService(db)
+    return auth_service.get_user_response(current_user)
 
 @router.put("/profile", response_model=UserResponse)
 async def update_profile(
@@ -92,8 +99,29 @@ async def update_profile(
     current_user.name = user_data.name
     db.commit()
     db.refresh(current_user)
+    return auth_service.get_user_response(current_user)
+
+@router.post("/change-password", response_model=UserResponse)
+async def change_password(
+    password_data: dict,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Change user password"""
+    auth_service = AuthService(db)
     
-    return UserResponse.from_orm(current_user)
+    try:
+        user = auth_service.change_password(
+            current_user.id,
+            password_data["current_password"],
+            password_data["new_password"]
+        )
+        return auth_service.get_user_response(user)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 @router.delete("/profile")
 async def delete_account(

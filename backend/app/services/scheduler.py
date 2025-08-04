@@ -3,7 +3,7 @@ import threading
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
-from app.models.sandbox import Sandbox, SandboxStatus
+from app.models.sandbox import Sandbox
 from app.services.docker_service import DockerService
 from app.services.email_service import EmailService
 import time
@@ -55,7 +55,7 @@ class SchedulerService:
             # Récupérer les sandboxes expirées
             expired_sandboxes = db.query(Sandbox).filter(
                 Sandbox.expires_at <= datetime.utcnow(),
-                Sandbox.status == SandboxStatus.RUNNING
+                Sandbox.status == "running"
             ).all()
             
             for sandbox in expired_sandboxes:
@@ -67,7 +67,7 @@ class SchedulerService:
                         await self.docker_service.delete_container(sandbox.container_id)
                     
                     # Marquer comme expirée
-                    sandbox.status = SandboxStatus.EXPIRED
+                    sandbox.status = "expired"
                     db.commit()
                     
                     print(f"Sandbox {sandbox.name} nettoyée avec succès")
@@ -95,7 +95,7 @@ class SchedulerService:
                 expiring_sandboxes = db.query(Sandbox).filter(
                     Sandbox.expires_at <= warning_time,
                     Sandbox.expires_at > datetime.utcnow(),
-                    Sandbox.status == SandboxStatus.RUNNING
+                    Sandbox.status == "running"
                 ).all()
                 
                 for sandbox in expiring_sandboxes:

@@ -12,32 +12,30 @@ import {
   UserGroupIcon
 } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface User {
   id: string
   name: string
   email: string
   avatar?: string
-  role: 'customer' | 'admin'
+  roles: string[]
 }
 
 interface SidebarProps {
-  user: User
   activeTab: string
   onTabChange: (tab: string) => void
-  onLogout: () => void
   isCollapsed: boolean
   onToggleCollapse: () => void
 }
 
 export default function Sidebar({ 
-  user, 
   activeTab, 
   onTabChange, 
-  onLogout, 
   isCollapsed, 
   onToggleCollapse 
 }: SidebarProps) {
+  const { user, logout } = useAuth()
   const { theme } = useTheme()
 
   const navigation = [
@@ -48,7 +46,11 @@ export default function Sidebar({
 
   // Navigation admin seulement
   const adminNavigation = [
+    { name: 'Toutes les sandboxes', href: 'all-sandboxes', icon: CubeIcon, current: activeTab === 'all-sandboxes' },
     { name: 'Utilisateurs', href: 'users', icon: UserGroupIcon, current: activeTab === 'users' },
+    { name: 'Rôles', href: 'roles', icon: Cog6ToothIcon, current: activeTab === 'roles' },
+    { name: 'Types de logiciels', href: 'software-types', icon: CubeIcon, current: activeTab === 'software-types' },
+    { name: 'Tarifs', href: 'pricing', icon: CreditCardIcon, current: activeTab === 'pricing' },
   ]
 
   const handleNavigation = (href: string) => {
@@ -85,11 +87,11 @@ export default function Sidebar({
             {/* Profile Image with Hover Menu */}
             <div className="relative">
               <div className="flex-shrink-0 cursor-pointer group">
-                {user.avatar ? (
+                {user?.avatar ? (
                   <img
                     className="h-6 w-6 rounded-full"
                     src={user.avatar}
-                    alt={user.name}
+                    alt={user.name || 'Avatar utilisateur'}
                   />
                 ) : (
                   <div className="h-6 w-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
@@ -107,7 +109,7 @@ export default function Sidebar({
                       Mon profil
                     </button>
                     <button
-                      onClick={onLogout}
+                      onClick={logout}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       Déconnexion
@@ -146,7 +148,7 @@ export default function Sidebar({
             ))}
             
             {/* Navigation admin */}
-            {user.role === 'admin' && (
+            {user?.roles?.includes('admin') && (
               <>
                 <div className="border-t border-gray-200 dark:border-gray-600 my-3"></div>
                 <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-3 mb-2">Administration</div>

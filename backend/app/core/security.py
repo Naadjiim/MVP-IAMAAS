@@ -3,7 +3,7 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.user import UserRole, User
+from app.models.user import User
 from app.services.auth_service import AuthService
 
 security = HTTPBearer()
@@ -33,7 +33,7 @@ def get_current_user(
     
     return user
 
-def require_role(required_role: UserRole):
+def require_role(required_role: str):
     """Décorateur pour vérifier le rôle de l'utilisateur"""
     def decorator(func):
         @wraps(func)
@@ -44,7 +44,7 @@ def require_role(required_role: UserRole):
                 raise HTTPException(status_code=401, detail="Utilisateur non authentifié")
             
             # Vérifier le rôle
-            if current_user.role != required_role:
+            if not current_user.has_role(required_role):
                 raise HTTPException(status_code=403, detail="Accès refusé - rôle insuffisant")
             
             return await func(*args, **kwargs)
@@ -53,10 +53,10 @@ def require_role(required_role: UserRole):
 
 def require_admin():
     """Décorateur pour vérifier que l'utilisateur est admin"""
-    return require_role(UserRole.ADMIN)
+    return require_role("admin")
 
 def get_current_admin_user(current_user = Depends(get_current_user)):
     """Dépendance pour récupérer l'utilisateur admin courant"""
-    if current_user.role != UserRole.ADMIN:
+    if not current_user.is_admin():
         raise HTTPException(status_code=403, detail="Accès refusé - rôle admin requis")
     return current_user 

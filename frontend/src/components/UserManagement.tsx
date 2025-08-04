@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { apiService } from '@/services/api'
+import ConfirmModal from './ConfirmModal'
+import ErrorModal from './ErrorModal'
 
 interface User {
   id: string
   email: string
   name: string
-  role: 'customer' | 'admin'
+  roles: string[]
   is_active: boolean
   is_verified: boolean
   created_at: string
@@ -15,8 +17,14 @@ interface User {
 
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
+  const [roles, setRoles] = useState<{id: string, name: string, description: string}[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [errorDetails, setErrorDetails] = useState<{ title: string; message: string; details?: string } | null>(null)
 
   useEffect(() => {
     loadUsers()
@@ -25,22 +33,36 @@ export default function UserManagement() {
   const loadUsers = async () => {
     try {
       setLoading(true)
-      const data = await apiService.getUsers()
-      setUsers(data)
+      const [usersData, rolesData] = await Promise.all([
+        apiService.getUsers(),
+        apiService.getRoles()
+      ])
+      setUsers(usersData)
+      setRoles(rolesData)
     } catch (err) {
-      setError('Erreur lors du chargement des utilisateurs')
+      setError('Erreur lors du chargement des données')
       console.error('Erreur:', err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleRoleChange = async (userId: string, newRole: 'customer' | 'admin') => {
+  const handleAddRole = async (userId: string, roleName: string) => {
     try {
-      await apiService.updateUserRole(userId, newRole)
+      await apiService.addRoleToUser(userId, roleName)
       await loadUsers() // Recharger la liste
     } catch (err) {
-      setError('Erreur lors de la mise à jour du rôle')
+      setError('Erreur lors de l\'ajout du rôle')
+      console.error('Erreur:', err)
+    }
+  }
+
+  const handleRemoveRole = async (userId: string, roleName: string) => {
+    try {
+      await apiService.removeRoleFromUser(userId, roleName)
+      await loadUsers() // Recharger la liste
+    } catch (err) {
+      setError('Erreur lors de la suppression du rôle')
       console.error('Erreur:', err)
     }
   }
@@ -53,23 +75,66 @@ export default function UserManagement() {
         await apiService.deactivateUser(userId)
       }
       await loadUsers() // Recharger la liste
-    } catch (err) {
-      setError('Erreur lors de la mise à jour du statut')
-      console.error('Erreur:', err)
+    } catch (err: any) {
+      console.error('Erreur lors de la mise à jour du statut:', err)
+      setErrorDetails({
+        title: 'Erreur lors de la mise à jour du statut',
+        message: 'Impossible de modifier le statut de cet utilisateur.',
+        details: err.response?.data?.detail || err.message
+      })
+      setShowErrorModal(true)
     }
   }
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-      return
-    }
+    const user = users.find(u => u.id === userId)
+    if (!user) return
+
+    setSelectedUser(user)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeleteUser = async () => {
+    if (!selectedUser) return
 
     try {
-      await apiService.deleteUser(userId)
+      await apiService.deleteUser(selectedUser.id)
       await loadUsers() // Recharger la liste
-    } catch (err) {
-      setError('Erreur lors de la suppression')
-      console.error('Erreur:', err)
+      setSelectedUser(null)
+    } catch (err: any) {
+      console.error('Erreur lors de la suppression:', err)
+      setErrorDetails({
+        title: 'Erreur lors de la suppression',
+        message: 'Impossible de supprimer cet utilisateur.',
+        details: err.response?.data?.detail || err.message
+      })
+      setShowErrorModal(true)
+    }
+  }
+
+  const handleDeactivateUser = async (userId: string) => {
+    const user = users.find(u => u.id === userId)
+    if (!user) return
+
+    setSelectedUser(user)
+    setShowDeactivateModal(true)
+  }
+
+  const confirmDeactivateUser = async () => {
+    if (!selectedUser) return
+
+    try {
+      await apiService.deactivateUser(selectedUser.id)
+      await loadUsers() // Recharger la liste
+      setSelectedUser(null)
+    } catch (err: any) {
+      console.error('Erreur lors de la désactivation:', err)
+      setErrorDetails({
+        title: 'Erreur lors de la désactivation',
+        message: 'Impossible de désactiver cet utilisateur.',
+        details: err.response?.data?.detail || err.message
+      })
+      setShowErrorModal(true)
     }
   }
 
@@ -158,14 +223,38 @@ export default function UserManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value as 'customer' | 'admin')}
-                      className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    >
-                      <option value="customer">Customer</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                    <div className="flex flex-wrap gap-1">
+                      {user.roles.map((role) => (
+                        <span
+                          key={role}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                        >
+                          {role}
+                          <button
+                            onClick={() => handleRemoveRole(user.id, role)}
+                            className="ml-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                      <select
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleAddRole(user.id, e.target.value)
+                            e.target.value = ''
+                          }
+                        }}
+                        className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      >
+                        <option value="">+ Ajouter</option>
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.name}>
+                            {role.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -181,7 +270,7 @@ export default function UserManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button
-                      onClick={() => handleToggleUserStatus(user.id, !user.is_active)}
+                      onClick={() => user.is_active ? handleDeactivateUser(user.id) : handleToggleUserStatus(user.id, true)}
                       className={`text-sm px-3 py-1 rounded ${
                         user.is_active
                           ? 'text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300'
@@ -203,6 +292,38 @@ export default function UserManagement() {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteUser}
+        title="Supprimer l'utilisateur"
+        message={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${selectedUser?.name}" ? Cette action est irréversible.`}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        type="danger"
+      />
+
+      <ConfirmModal
+        isOpen={showDeactivateModal}
+        onClose={() => setShowDeactivateModal(false)}
+        onConfirm={confirmDeactivateUser}
+        title="Désactiver l'utilisateur"
+        message={`Êtes-vous sûr de vouloir désactiver l'utilisateur "${selectedUser?.name}" ? Il ne pourra plus se connecter à l'application.`}
+        confirmText="Désactiver"
+        cancelText="Annuler"
+        type="warning"
+      />
+
+      {errorDetails && (
+        <ErrorModal
+          isOpen={showErrorModal}
+          onClose={() => setShowErrorModal(false)}
+          title={errorDetails.title}
+          message={errorDetails.message}
+          details={errorDetails.details}
+        />
+      )}
     </div>
   )
 } 

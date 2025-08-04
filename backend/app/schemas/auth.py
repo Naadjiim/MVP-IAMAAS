@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
-from app.models.user import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -18,18 +17,24 @@ class GoogleLogin(BaseModel):
     token: str
 
 class UserUpdate(BaseModel):
-    name: str
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = None
+    is_verified: Optional[bool] = None
+    avatar_url: Optional[str] = None
 
 class UserResponse(UserBase):
     id: str
     is_active: bool
     is_verified: bool
     avatar_url: Optional[str] = None
-    role: UserRole
+    roles: List[str] = []
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -38,4 +43,4 @@ class TokenResponse(BaseModel):
 
 class AuthResponse(BaseModel):
     token: str
-    user: UserResponse 
+    user: dict 

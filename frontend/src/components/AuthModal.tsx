@@ -7,8 +7,8 @@ import { XMarkIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  onLogin: (email: string, password: string) => void
-  onRegister: (email: string, password: string, name: string) => void
+  onLogin: (email: string, password: string) => Promise<void>
+  onRegister: (email: string, password: string, name: string) => Promise<void>
   onGoogleLogin: () => void
   isLoading?: boolean
 }
@@ -28,13 +28,24 @@ export default function AuthModal({
     password: '',
     name: ''
   })
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (isLogin) {
-      onLogin(formData.email, formData.password)
-    } else {
-      onRegister(formData.email, formData.password, formData.name)
+    setError(null)
+    setIsSubmitting(true)
+    
+    try {
+      if (isLogin) {
+        await onLogin(formData.email, formData.password)
+      } else {
+        await onRegister(formData.email, formData.password, formData.name)
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || err.message || 'Une erreur est survenue')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -45,6 +56,7 @@ export default function AuthModal({
   const resetForm = () => {
     setFormData({ email: '', password: '', name: '' })
     setShowPassword(false)
+    setError(null)
   }
 
   const toggleMode = () => {
@@ -57,26 +69,26 @@ export default function AuthModal({
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         <Transition.Child
           as={Fragment}
-          enter="ease-out duration-300"
+          enter="ease-out duration-500"
           enterFrom="opacity-0"
           enterTo="opacity-100"
-          leave="ease-in duration-200"
+          leave="ease-in duration-300"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 z-10 overflow-y-auto">
           <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
             <Transition.Child
               as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enter="ease-out duration-500"
+              enterFrom="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-90"
               enterTo="opacity-100 translate-y-0 sm:scale-100"
-              leave="ease-in duration-200"
+              leave="ease-in duration-300"
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              leaveTo="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-90"
             >
               <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white dark:bg-dark-surface px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md sm:p-6">
                 <div className="absolute right-0 top-0 pr-4 pt-4">
@@ -163,15 +175,20 @@ export default function AuthModal({
                           )}
                         </button>
                       </div>
+                      {error && (
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                          {error}
+                        </p>
+                      )}
                     </div>
 
                     <div>
                       <button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isLoading || isSubmitting}
                         className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isLoading ? (
+                        {isLoading || isSubmitting ? (
                           <>
                             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
