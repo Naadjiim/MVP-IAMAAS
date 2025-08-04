@@ -1,0 +1,87 @@
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:15
+    container_name: iamaas-postgres
+    environment:
+      POSTGRES_DB: iamaas
+      POSTGRES_USER: iamaas
+      POSTGRES_PASSWORD: iamaas
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - iamaas-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iamaas -d iamaas"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis pour Celery (optionnel pour le MVP)
+  redis:
+    image: redis:7-alpine
+    container_name: iamaas-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - iamaas-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iamaas-backend
+    environment:
+      - DATABASE_URL=postgresql://iamaas:iamaas@postgres:5432/iamaas
+      - REDIS_URL=redis://redis:6379/0
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@iamaas.com}
+      - FROM_NAME=${FROM_NAME:-IAMAAS Platform}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - iamaas-network
+    restart: unless-stopped
+    privileged: true
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: iamaas-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - iamaas-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  iamaas-network:
+    driver: bridge 
