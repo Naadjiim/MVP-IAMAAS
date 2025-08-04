@@ -6,7 +6,6 @@ import PricingDisplay from './PricingDisplay'
 
 interface SandboxFormData {
   name: string
-  email: string
   duration_hours: number
   description: string
   software_type: 'keycloak'
@@ -15,7 +14,6 @@ interface SandboxFormData {
 export default function SandboxForm() {
   const [formData, setFormData] = useState<SandboxFormData>({
     name: '',
-    email: '',
     duration_hours: 24,
     description: '',
     software_type: 'keycloak'
@@ -37,7 +35,6 @@ export default function SandboxForm() {
       })
       setFormData({
         name: '',
-        email: '',
         duration_hours: 24,
         description: ''
       })
@@ -78,21 +75,7 @@ export default function SandboxForm() {
           />
         </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Email de contact *
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            required
-            value={formData.email}
-            onChange={handleChange}
-            className="input-field"
-            placeholder="votre.email@exemple.com"
-          />
-        </div>
+
 
         <div>
           <label htmlFor="software_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

@@ -30,6 +30,16 @@ api.interceptors.response.use(
   }
 )
 
+export interface User {
+  id: string
+  email: string
+  name: string
+  role: 'customer' | 'admin'
+  is_active: boolean
+  is_verified: boolean
+  created_at: string
+}
+
 export interface CreateSandboxRequest {
   name: string
   email: string
@@ -129,5 +139,27 @@ export const apiService = {
   deleteAccount,
   
   // Pricing operations
-  getPricing
+  getPricing,
+
+  // Admin user management
+  async getUsers(): Promise<User[]> {
+    const response = await api.get('/api/v1/admin/users')
+    return response.data
+  },
+
+  async updateUserRole(userId: string, role: 'customer' | 'admin'): Promise<void> {
+    await api.put(`/api/v1/admin/users/${userId}/role`, { role })
+  },
+
+  async activateUser(userId: string): Promise<void> {
+    await api.put(`/api/v1/admin/users/${userId}/activate`)
+  },
+
+  async deactivateUser(userId: string): Promise<void> {
+    await api.put(`/api/v1/admin/users/${userId}/deactivate`)
+  },
+
+  async deleteUser(userId: string): Promise<void> {
+    await api.delete(`/api/v1/admin/users/${userId}`)
+  }
 } 

@@ -122,115 +122,108 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* En-tête */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tableau de bord</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Bienvenue ! Voici un aperçu de vos sandboxes et de votre activité.
-        </p>
-      </div>
+    <div className="space-y-6">
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <CubeIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <CubeIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total sandboxes</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.total}</p>
+            <div className="ml-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Total sandboxes</p>
+              <p className="text-xl font-semibold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="h-8 w-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                <div className="h-3 w-3 bg-green-600 dark:bg-green-400 rounded-full"></div>
+              <div className="h-6 w-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                <div className="h-2.5 w-2.5 bg-green-600 dark:bg-green-400 rounded-full"></div>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">En cours</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.running}</p>
+            <div className="ml-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">En cours</p>
+              <p className="text-xl font-semibold text-gray-900 dark:text-white">{stats.running}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="h-8 w-8 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
-                <div className="h-3 w-3 bg-yellow-600 dark:bg-yellow-400 rounded-full"></div>
+              <div className="h-6 w-6 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
+                <div className="h-2.5 w-2.5 bg-yellow-600 dark:bg-yellow-400 rounded-full"></div>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Arrêtées</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.stopped}</p>
+            <div className="ml-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Arrêtées</p>
+              <p className="text-xl font-semibold text-gray-900 dark:text-white">{stats.stopped}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card p-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <div className="h-8 w-8 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
-                <div className="h-3 w-3 bg-red-600 dark:bg-red-400 rounded-full"></div>
+              <div className="h-6 w-6 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                <div className="h-2.5 w-2.5 bg-red-600 dark:bg-red-400 rounded-full"></div>
               </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Expirées</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.expired}</p>
+            <div className="ml-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Expirées</p>
+              <p className="text-xl font-semibold text-gray-900 dark:text-white">{stats.expired}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Actions rapides */}
-      <div className="card">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Actions rapides</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="card p-4">
+        <h2 className="text-base font-medium text-gray-900 dark:text-white mb-3">Actions rapides</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button
             onClick={() => window.location.href = '/?tab=create'}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            className="flex items-center justify-center p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
-            <PlusIcon className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-gray-600 dark:text-gray-400">Créer une sandbox</span>
+            <PlusIcon className="h-5 w-5 text-gray-400 mr-2" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">Créer une sandbox</span>
           </button>
           
           <button
             onClick={() => window.location.href = '/?tab=list'}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            className="flex items-center justify-center p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
-            <EyeIcon className="h-6 w-6 text-gray-400 mr-2" />
-            <span className="text-gray-600 dark:text-gray-400">Voir mes sandboxes</span>
+            <EyeIcon className="h-5 w-5 text-gray-400 mr-2" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">Voir mes sandboxes</span>
           </button>
 
           <button
             onClick={() => window.location.href = '/profile'}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            className="flex items-center justify-center p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
-            <svg className="h-6 w-6 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span className="text-gray-600 dark:text-gray-400">Mon profil</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Mon profil</span>
           </button>
         </div>
       </div>
 
       {/* Alertes */}
       {getExpiringSoon().length > 0 && (
-        <div className="card border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
+        <div className="card p-4 border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20">
           <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+            <ExclamationTriangleIcon className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mr-2" />
             <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
               {getExpiringSoon().length} sandbox{getExpiringSoon().length > 1 ? 's' : ''} expire{getExpiringSoon().length > 1 ? 'nt' : ''} dans les 24h
             </h3>
           </div>
-          <div className="mt-3">
-            <div className="text-sm text-yellow-700 dark:text-yellow-300">
+          <div className="mt-2">
+            <div className="text-xs text-yellow-700 dark:text-yellow-300">
               {getExpiringSoon().map(sandbox => (
                 <div key={sandbox.id} className="flex items-center justify-between py-1">
                   <span>{sandbox.name}</span>
@@ -243,35 +236,35 @@ export default function Dashboard() {
       )}
 
       {/* Sandboxes récentes */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white">Sandboxes récentes</h2>
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-medium text-gray-900 dark:text-white">Sandboxes récentes</h2>
           <button
             onClick={() => window.location.href = '/?tab=list'}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
           >
             Voir tout
           </button>
         </div>
         
         {getRecentSandboxes().length === 0 ? (
-          <div className="text-center py-8">
-            <CubeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">Aucune sandbox créée</p>
+          <div className="text-center py-6">
+            <CubeIcon className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">Aucune sandbox créée</p>
             <button
               onClick={() => window.location.href = '/?tab=create'}
-              className="mt-2 btn-primary"
+              className="mt-2 btn-primary text-sm px-3 py-1.5"
             >
               Créer votre première sandbox
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {getRecentSandboxes().map((sandbox) => (
-              <div key={sandbox.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
-                <div className="flex items-center space-x-3">
+              <div key={sandbox.id} className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-gray-600 rounded">
+                <div className="flex items-center space-x-2">
                   <div className="flex-shrink-0">
-                    <CubeIcon className="h-5 w-5 text-gray-400" />
+                    <CubeIcon className="h-4 w-4 text-gray-400" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{sandbox.name}</p>

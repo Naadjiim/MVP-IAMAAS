@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar'
 import SandboxForm from '@/components/SandboxForm'
 import SandboxList from '@/components/SandboxList'
 import Dashboard from '@/components/Dashboard'
+import UserManagement from '@/components/UserManagement'
 import AuthModal from '@/components/AuthModal'
 import { apiService } from '@/services/api'
 
@@ -18,12 +19,21 @@ interface User {
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'create' | 'list'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'create' | 'list' | 'users'>('dashboard')
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  // Gérer le paramètre tab dans l'URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const tabParam = urlParams.get('tab')
+    if (tabParam && ['dashboard', 'create', 'list', 'users'].includes(tabParam)) {
+      setActiveTab(tabParam as 'dashboard' | 'create' | 'list' | 'users')
+    }
+  }, [])
 
   // Check if user is already logged in
   useEffect(() => {
@@ -98,6 +108,14 @@ export default function Home() {
     setUser(null)
   }
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab as 'dashboard' | 'create' | 'list' | 'users')
+    // Mettre à jour l'URL sans recharger la page
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', tab)
+    window.history.pushState({}, '', url.toString())
+  }
+
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-dark-bg flex items-center justify-center">
@@ -162,38 +180,34 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
-      {/* Sidebar */}
-      <Sidebar
-        user={user}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onLogout={handleLogout}
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
+      {/* Sidebar - Fixed */}
+              <Sidebar
+          user={user}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onLogout={handleLogout}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
 
-      {/* Main content */}
-      <div className="lg:pl-64">
+              {/* Main content - Takes remaining space */}
+        <div className="min-h-screen flex flex-col ml-64">
         {/* Header */}
-        <GitLabHeader onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} />
+        <GitLabHeader 
+          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} 
+          activeTab={activeTab}
+        />
         
-        {/* Content */}
-        <main className="px-6 pb-6 pt-0">
-          {activeTab === 'dashboard' && <Dashboard />}
-          {activeTab === 'create' && (
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                  Créer votre environnement IAM sandbox
-                </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400">
-                  Déployez automatiquement un environnement Keycloak pour vos tests et formations
-                </p>
+                  {/* Content */}
+          <main className="flex-1 px-6 pb-6 pt-4 overflow-auto">
+                      {activeTab === 'dashboard' && <Dashboard />}
+            {activeTab === 'create' && (
+              <div className="max-w-2xl mx-auto">
+                <SandboxForm />
               </div>
-              <SandboxForm />
-            </div>
-          )}
-          {activeTab === 'list' && <SandboxList />}
+            )}
+            {activeTab === 'list' && <SandboxList />}
+            {activeTab === 'users' && user?.role === 'admin' && <UserManagement />}
         </main>
       </div>
     </div>

@@ -74,23 +74,27 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
-      {/* Sidebar */}
+      {/* Sidebar - Fixed */}
       <Sidebar
         user={user}
         activeTab="profile"
         onTabChange={() => {}}
         onLogout={handleLogout}
         isCollapsed={sidebarCollapsed}
+
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      {/* Main content */}
-      <div className="lg:pl-64">
+              {/* Main content - Takes remaining space */}
+        <div className="min-h-screen flex flex-col ml-64">
         {/* Header */}
-        <GitLabHeader onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} />
+        <GitLabHeader 
+          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} 
+          activeTab="profile"
+        />
         
-        {/* Content */}
-        <main className="px-6 pb-6 pt-0">
+                  {/* Content */}
+          <main className="flex-1 px-6 pb-6 pt-4 overflow-auto">
           <UserProfilePage />
         </main>
       </div>

@@ -1,29 +1,69 @@
 'use client'
 
-import { Bars3Icon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
 
 interface GitLabHeaderProps {
   onToggleSidebar: () => void
+  activeTab?: string
 }
 
-export default function GitLabHeader({ onToggleSidebar }: GitLabHeaderProps) {
+export default function GitLabHeader({ onToggleSidebar, activeTab }: GitLabHeaderProps) {
   const { theme, toggleTheme } = useTheme()
 
-  return (
-          <header className="bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-gray-600 h-16 flex items-center justify-between px-4 lg:px-6">
-      {/* Left side - Menu button */}
-      <div className="flex items-center">
-        <button
-          onClick={onToggleSidebar}
-          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors lg:hidden"
-        >
-          <Bars3Icon className="h-6 w-6" />
-        </button>
-      </div>
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return 'Tableau de bord'
+      case 'create':
+        return 'Créer une sandbox'
+      case 'list':
+        return 'Mes sandboxes'
+      case 'users':
+        return 'Gestion des utilisateurs'
+      case 'profile':
+        return 'Mon profil'
+      case 'pricing':
+        return 'Tarification'
+      case 'stats':
+        return 'Statistiques'
+      default:
+        return 'Tableau de bord'
+    }
+  }
 
-      {/* Right side - Theme toggle and other actions */}
-      <div className="flex items-center space-x-4">
+  const getPageDescription = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return 'Bienvenue ! Voici un aperçu de vos sandboxes et de votre activité.'
+      case 'create':
+        return 'Déployez automatiquement un environnement Keycloak pour vos tests et formations'
+      case 'list':
+        return 'Gérez tous vos environnements sandbox IAM'
+      case 'users':
+        return 'Gérez les comptes utilisateurs et leurs permissions'
+      case 'profile':
+        return 'Gérez vos informations personnelles et paramètres de compte'
+      case 'pricing':
+        return 'Consultez nos tarifs et options d\'abonnement'
+      case 'stats':
+        return 'Analysez vos statistiques d\'utilisation'
+      default:
+        return 'Bienvenue ! Voici un aperçu de vos sandboxes et de votre activité.'
+    }
+  }
+
+  return (
+                <header className="bg-white dark:bg-[#19181D] border-b border-gray-200 dark:border-gray-600 h-16 flex items-center justify-between px-4 lg:px-6">
+        {/* Left side - Page title and description */}
+        <div className="flex items-center">
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{getPageTitle()}</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{getPageDescription()}</p>
+          </div>
+        </div>
+
+        {/* Right side - Theme toggle and other actions */}
+        <div className="flex items-center space-x-4">
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
