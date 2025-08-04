@@ -11,7 +11,7 @@ class SandboxBase(BaseModel):
     software_type: SoftwareType = SoftwareType.keycloak
 
 class SandboxCreate(SandboxBase):
-    pass
+    email: Optional[str] = None  # Optionnel car on utilisera l'email de l'utilisateur connecté
 
 class SandboxUpdate(BaseModel):
     name: Optional[str] = None
