@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 
 from app.database import engine, Base
-from app.api.routes import sandboxes, auth
+from app.api.routes import sandboxes, auth, admin
 from app.services.scheduler import start_scheduler, stop_scheduler
 
 @asynccontextmanager
@@ -35,6 +35,7 @@ app.add_middleware(
 # Inclusion des routes
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(sandboxes.router, prefix="/api/v1", tags=["sandboxes"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
 
 @app.get("/")
 async def root():

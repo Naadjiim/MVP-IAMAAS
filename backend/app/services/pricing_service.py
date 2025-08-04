@@ -3,57 +3,44 @@ from typing import Dict
 class PricingService:
     """Service pour calculer les prix des sandboxes"""
     
-    # Prix de base par heure (en euros)
-    BASE_PRICE_PER_HOUR = 0.50
-    
-    # Remises selon la durée
-    DISCOUNTS = {
-        1: 0.0,      # 1h: pas de remise
-        2: 0.05,     # 2h: 5% de remise
-        4: 0.10,     # 4h: 10% de remise
-        8: 0.15,     # 8h: 15% de remise
-        24: 0.20,    # 24h: 20% de remise
-        48: 0.25,    # 48h: 25% de remise
-        72: 0.30,    # 72h: 30% de remise
+    # Nouveaux prix fixes selon la durée
+    PRICING_TABLE = {
+        1: 0.50,
+        2: 0.80,
+        4: 1.20,
+        8: 2.00,
+        24: 4.00,
+        36: 5.00,
+        48: 6.00,
+        72: 8.00,
     }
     
     @classmethod
     def calculate_price(cls, duration_hours: int) -> float:
         """Calcule le prix d'une sandbox selon sa durée"""
-        base_price = duration_hours * cls.BASE_PRICE_PER_HOUR
+        # Trouver le prix le plus proche dans la table de prix
+        available_durations = sorted(cls.PRICING_TABLE.keys())
         
-        # Appliquer la remise selon la durée
-        discount_rate = 0.0
-        for duration, discount in cls.DISCOUNTS.items():
-            if duration_hours <= duration:
-                discount_rate = discount
-                break
+        # Si la durée exacte existe, l'utiliser
+        if duration_hours in cls.PRICING_TABLE:
+            return cls.PRICING_TABLE[duration_hours]
         
-        # Si la durée est supérieure à 72h, appliquer la remise maximale
-        if duration_hours > 72:
-            discount_rate = cls.DISCOUNTS[72]
-        
-        final_price = base_price * (1 - discount_rate)
-        return round(final_price, 2)
+        # Sinon, trouver la durée la plus proche
+        closest_duration = min(available_durations, key=lambda x: abs(x - duration_hours))
+        return cls.PRICING_TABLE[closest_duration]
     
     @classmethod
     def get_pricing_info(cls) -> Dict:
         """Retourne les informations de pricing pour l'affichage"""
         pricing_info = []
         
-        for duration, discount in cls.DISCOUNTS.items():
-            base_price = duration * cls.BASE_PRICE_PER_HOUR
-            final_price = base_price * (1 - discount)
-            
+        for duration, price in cls.PRICING_TABLE.items():
             pricing_info.append({
                 "duration_hours": duration,
-                "base_price": round(base_price, 2),
-                "discount_percent": int(discount * 100),
-                "final_price": round(final_price, 2),
-                "price_per_hour": round(final_price / duration, 2)
+                "final_price": price,
+                "price_per_hour": round(price / duration, 2)
             })
         
         return {
-            "base_price_per_hour": cls.BASE_PRICE_PER_HOUR,
             "pricing_tiers": pricing_info
         } 

@@ -38,7 +38,7 @@ async def create_sandbox(
         db_sandbox = Sandbox(
             id=sandbox_id,
             name=sandbox_data.name,
-            email=sandbox_data.email,
+            email=current_user.email,  # Utiliser l'email de l'utilisateur connecté
             description=sandbox_data.description,
             duration_hours=sandbox_data.duration_hours,
             software_type=sandbox_data.software_type,
@@ -63,7 +63,7 @@ async def create_sandbox(
             
             # Envoyer l'email de notification
             await email_service.send_sandbox_created_email(
-                sandbox_data.email,
+                current_user.email,  # Utiliser l'email de l'utilisateur connecté
                 sandbox_data.name,
                 container_info['access_url'],
                 container_info['admin_username'],

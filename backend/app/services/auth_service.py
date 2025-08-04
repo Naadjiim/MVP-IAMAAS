@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy.orm import Session
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.auth import UserCreate, UserLogin
 from app.core.config import settings
 
@@ -22,7 +22,8 @@ class AuthService:
         user = User(
             id=str(uuid.uuid4()),
             email=user_data.email,
-            name=user_data.name
+            name=user_data.name,
+            role=UserRole.CUSTOMER
         )
         user.set_password(user_data.password)
         
@@ -87,7 +88,8 @@ class AuthService:
             name=name,
             google_id=google_id,
             avatar_url=avatar_url,
-            is_verified=True
+            is_verified=True,
+            role=UserRole.CUSTOMER
         )
         
         self.db.add(user)
