@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Header from '@/components/Header'
+import Sidebar from '@/components/Sidebar'
+import GitLabHeader from '@/components/GitLabHeader'
 import UserProfilePage from '@/components/UserProfilePage'
 import { apiService } from '@/services/api'
 
@@ -54,6 +55,8 @@ export default function ProfilePage() {
     window.location.href = '/'
   }
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -71,20 +74,26 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header 
+      {/* Sidebar */}
+      <Sidebar
         user={user}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-        onGoogleLogin={handleGoogleLogin}
+        activeTab="profile"
+        onTabChange={() => {}}
         onLogout={handleLogout}
-        isLoading={false}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      
-      <main className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Header */}
+        <GitLabHeader onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} />
+        
+        {/* Content */}
+        <main className="px-6 pb-6 pt-0">
           <UserProfilePage />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 } 
