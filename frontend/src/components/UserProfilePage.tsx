@@ -159,7 +159,7 @@ export default function UserProfilePage() {
               </div>
             </div>
 
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Membre depuis le {formatDate(user.created_at)}
               </p>
@@ -285,7 +285,7 @@ export default function UserProfilePage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-dark-surface p-6 text-left align-middle shadow-xl transition-all">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="flex-shrink-0">
                       <ExclamationTriangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />

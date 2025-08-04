@@ -36,11 +36,11 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <ThemeProvider>
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            {children}
-          </div>
-        </ThemeProvider>
+                         <ThemeProvider>
+                   <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
+                     {children}
+                   </div>
+                 </ThemeProvider>
       </body>
     </html>
   )

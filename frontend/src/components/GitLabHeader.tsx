@@ -11,12 +11,12 @@ export default function GitLabHeader({ onToggleSidebar }: GitLabHeaderProps) {
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-4 lg:px-6">
+          <header className="bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-gray-600 h-16 flex items-center justify-between px-4 lg:px-6">
       {/* Left side - Menu button */}
       <div className="flex items-center">
         <button
           onClick={onToggleSidebar}
-          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors lg:hidden"
+          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors lg:hidden"
         >
           <Bars3Icon className="h-6 w-6" />
         </button>
@@ -27,7 +27,7 @@ export default function GitLabHeader({ onToggleSidebar }: GitLabHeaderProps) {
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
           title={theme === 'dark' ? 'Passer au mode clair' : 'Passer au mode sombre'}
         >
           {theme === 'dark' ? (
@@ -43,7 +43,7 @@ export default function GitLabHeader({ onToggleSidebar }: GitLabHeaderProps) {
 
         {/* Help/Support button */}
         <button
-          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
           title="Aide et support"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

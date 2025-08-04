@@ -68,13 +68,13 @@ export default function Sidebar({
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 
+        fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-dark-surface border-r border-gray-200 dark:border-gray-600 
         transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
         ${isCollapsed ? '-translate-x-full' : 'translate-x-0'}
       `}>
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-600">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -123,7 +123,7 @@ export default function Sidebar({
           </nav>
 
           {/* User section */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          <div className="border-t border-gray-200 dark:border-gray-600 p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 {user.avatar ? (

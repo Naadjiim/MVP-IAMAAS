@@ -132,7 +132,7 @@ export default function SandboxForm() {
           </select>
         </div>
 
-        <div className="card bg-gray-50 dark:bg-gray-700">
+        <div className="card bg-gray-50 dark:bg-gray-600">
           <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
             💰 Estimation du coût
           </h3>

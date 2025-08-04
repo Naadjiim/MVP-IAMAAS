@@ -86,7 +86,7 @@ export default function Dashboard() {
       case 'expired':
         return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+        return 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200'
     }
   }
 
@@ -268,7 +268,7 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-3">
             {getRecentSandboxes().map((sandbox) => (
-              <div key={sandbox.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div key={sandbox.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
                     <CubeIcon className="h-5 w-5 text-gray-400" />

@@ -71,8 +71,8 @@ export default function PricingDisplay({ durationHours, onPriceChange }: Pricing
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2 mb-2"></div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/3"></div>
       </div>
     )
   }
@@ -122,7 +122,7 @@ export default function PricingDisplay({ durationHours, onPriceChange }: Pricing
         </div>
       )}
       
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
         <div className="flex items-center justify-between">
           <span className="font-medium text-gray-900 dark:text-white">
             Prix total
