@@ -18,7 +18,7 @@ def init_admin():
         print(f"✅ Utilisateur admin créé avec succès:")
         print(f"   Email: {admin_user.email}")
         print(f"   Nom: {admin_user.name}")
-        print(f"   Rôle: {admin_user.role.value}")
+        print(f"   Rôles: {[role.name for role in admin_user.roles]}")
         print(f"   ID: {admin_user.id}")
     except Exception as e:
         print(f"❌ Erreur lors de la création de l'admin: {e}")

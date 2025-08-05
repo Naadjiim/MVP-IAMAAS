@@ -3,11 +3,12 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { AuthProvider } from '@/contexts/AuthContext'
+import InactivityManager from '@/components/InactivityManager'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'IAMAAS - Identity Access Management as a Service',
+  title: 'GateLabs - Identity Access Management as a Service',
   description: 'Plateforme SaaS pour créer et gérer des environnements IAM sandbox Keycloak',
 }
 
@@ -42,6 +43,7 @@ export default function RootLayout({
             <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
               {children}
             </div>
+            <InactivityManager />
           </AuthProvider>
         </ThemeProvider>
       </body>

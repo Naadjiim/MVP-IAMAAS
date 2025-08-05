@@ -19,6 +19,13 @@ class SandboxUpdate(BaseModel):
     description: Optional[str] = None
     software_type_id: Optional[str] = None
 
+class PaymentIntentResponse(BaseModel):
+    payment_intent_id: str
+    client_secret: str
+    amount: int  # Montant en centimes
+    currency: str
+    sandbox_id: str
+
 class SandboxResponse(SandboxBase):
     id: str
     status: str
@@ -28,6 +35,9 @@ class SandboxResponse(SandboxBase):
     container_id: Optional[str] = None
     access_url: Optional[str] = None
     admin_username: Optional[str] = None
+    admin_password: Optional[str] = None
+    stripe_payment_intent_id: Optional[str] = None
+    payment_status: Optional[str] = None
     created_at: datetime
     expires_at: datetime
     duration_hours: int

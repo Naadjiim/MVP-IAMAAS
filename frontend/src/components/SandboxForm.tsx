@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { apiService } from '@/services/api'
 import PricingDisplay from './PricingDisplay'
 import SuccessModal from './SuccessModal'
+import StripePaymentModal from './StripePaymentModal'
 
 interface SandboxFormData {
   name: string
@@ -24,6 +25,8 @@ export default function SandboxForm() {
   const [currentPrice, setCurrentPrice] = useState<number>(0)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [createdSandbox, setCreatedSandbox] = useState<any>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentIntent, setPaymentIntent] = useState<any>(null)
 
   // Récupérer l'ID du type de logiciel Keycloak au chargement
   useEffect(() => {
@@ -64,16 +67,15 @@ export default function SandboxForm() {
 
     try {
       console.log('Envoi des données:', formData)
-      const response = await apiService.createSandbox(formData)
+      const response = await apiService.createSandboxPayment(formData)
       console.log('Réponse reçue:', response)
-      setCreatedSandbox(response)
-      setShowSuccessModal(true)
-      setFormData(prev => ({
-        ...prev,
-        name: '',
-        duration_hours: 24,
-        description: ''
-      }))
+      
+      // Ouvrir le modal de paiement
+      setPaymentIntent({
+        ...response,
+        sandbox_id: response.sandbox_id
+      })
+      setShowPaymentModal(true)
     } catch (error) {
       console.error('Erreur lors de la création de la sandbox:', error)
       setMessage({
@@ -83,6 +85,19 @@ export default function SandboxForm() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handlePaymentSuccess = (sandbox: any) => {
+    setShowPaymentModal(false)
+    setPaymentIntent(null)
+    setCreatedSandbox(sandbox)
+    setShowSuccessModal(true)
+    setFormData(prev => ({
+      ...prev,
+      name: '',
+      duration_hours: 24,
+      description: ''
+    }))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -213,6 +228,14 @@ export default function SandboxForm() {
           // Naviguer vers la liste des sandboxes
           window.location.href = '/?tab=list'
         }}
+      />
+      
+      <StripePaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentSuccess}
+        paymentIntent={paymentIntent}
+        sandboxName={formData.name}
       />
     </div>
   )

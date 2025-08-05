@@ -1,4 +1,4 @@
-# 🧩 MVP - IAMAAS (Identity Access Management as a Service)
+# 🧩 GateLabs - Identity Access Management as a Service
 
 > MVP d'une plateforme SaaS permettant de créer, gérer et détruire automatiquement des environnements **IAM sandbox (Keycloak)** à la demande. Ce projet repose sur une architecture **React (frontend)** + **FastAPI (backend)**, et utilise **Docker Desktop** pour les déploiements de développement locaux.
 
@@ -177,6 +177,27 @@ Pour activer les notifications par email :
 1. Créez un compte sur [SendGrid](https://sendgrid.com/)
 2. Générez une clé API
 3. Ajoutez la clé dans le fichier `.env`
+
+### 🧪 Cartes de test Stripe
+
+Pour tester les paiements en mode développement, utilisez ces cartes de test Stripe :
+
+#### ✅ Paiements réussis
+- **Visa** : `4242 4242 4242 4242`
+- **Mastercard** : `5555 5555 5555 4444`
+- **American Express** : `3782 822463 10005`
+
+#### ❌ Paiements échoués
+- **Carte refusée** : `4000 0000 0000 0002`
+- **Carte expirée** : `4000 0000 0000 0069`
+- **Carte incorrecte** : `4000 0000 0000 0127`
+
+#### 📝 Informations communes pour tous les tests
+- **Date d'expiration** : N'importe quelle date future (ex: `12/25`)
+- **CVC** : N'importe quels 3 chiffres (ex: `123`)
+- **Code postal** : N'importe quel code postal (ex: `12345`)
+
+> **Note** : Ces cartes ne fonctionnent qu'en mode test. En production, utilisez de vraies cartes bancaires.
 
 ---
 

@@ -79,11 +79,15 @@ export default function SuccessModal({ isOpen, onClose, sandbox, onViewSandboxes
                           </div>
                           <div>
                             <span className="font-medium text-gray-700 dark:text-gray-300">Prix :</span>
-                            <span className="ml-2 text-gray-900 dark:text-white">{sandbox.price.toFixed(2)}€</span>
+                            <span className="ml-2 text-gray-900 dark:text-white">
+                              {sandbox.price ? `${sandbox.price.toFixed(2)}€` : 'N/A'}
+                            </span>
                           </div>
                           <div>
                             <span className="font-medium text-gray-700 dark:text-gray-300">Expire le :</span>
-                            <span className="ml-2 text-gray-900 dark:text-white">{formatDate(sandbox.expires_at)}</span>
+                            <span className="ml-2 text-gray-900 dark:text-white">
+                              {sandbox.expires_at ? formatDate(sandbox.expires_at) : 'N/A'}
+                            </span>
                           </div>
                           {sandbox.admin_username && (
                             <div>
@@ -109,14 +113,16 @@ export default function SuccessModal({ isOpen, onClose, sandbox, onViewSandboxes
                   </div>
                 </div>
                 <div className="mt-6 sm:mt-8 space-y-3">
-                  <a
-                    href={sandbox.access_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Accéder à ma sandbox
-                  </a>
+                  {sandbox.access_url && (
+                    <a
+                      href={sandbox.access_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Accéder à ma sandbox
+                    </a>
+                  )}
                   <button
                     type="button"
                     onClick={onViewSandboxes}

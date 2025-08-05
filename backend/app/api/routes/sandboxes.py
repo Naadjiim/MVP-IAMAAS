@@ -7,86 +7,165 @@ from datetime import datetime, timedelta
 from app.database import get_db
 from app.models.sandbox import Sandbox
 from app.models.user import User
-from app.schemas.sandbox import SandboxCreate, SandboxResponse, SandboxUpdate
+from app.schemas.sandbox import SandboxCreate, SandboxResponse, SandboxUpdate, PaymentIntentResponse
+from app.core.security import get_current_user
+from app.services.pricing_service import PricingService
 from app.services.docker_service import DockerService
 from app.services.email_service import EmailService
-from app.services.pricing_service import PricingService
-from app.api.routes.auth import get_current_user
+from app.services.stripe_service import StripeService
 
 router = APIRouter()
 docker_service = DockerService()
 email_service = EmailService()
 
-@router.post("/sandboxes/", response_model=SandboxResponse, status_code=status.HTTP_201_CREATED)
-async def create_sandbox(
+@router.post("/sandboxes/", response_model=PaymentIntentResponse, status_code=status.HTTP_200_OK)
+async def create_sandbox_payment(
     sandbox_data: SandboxCreate, 
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Créer une nouvelle sandbox Keycloak"""
+    """Créer une intention de paiement pour une nouvelle sandbox"""
     try:
-        # Générer un ID unique
-        sandbox_id = str(uuid.uuid4())
-        
-        # Calculer la date d'expiration
-        expires_at = datetime.utcnow() + timedelta(hours=sandbox_data.duration_hours)
-        
         # Calculer le prix
         price = PricingService.calculate_price(db, sandbox_data.software_type_id, sandbox_data.duration_hours)
         
-        # Créer l'enregistrement en base
+        # Créer ou récupérer le client Stripe
+        stripe_service = StripeService(db)
+        customer_id = None
+        
+        # Vérifier si l'utilisateur a déjà un customer_id
+        if current_user.stripe_customer_id:
+            customer_id = current_user.stripe_customer_id
+        else:
+            # Créer un nouveau client Stripe
+            customer_id = stripe_service.create_customer(current_user)
+            current_user.stripe_customer_id = customer_id
+            db.commit()
+        
+        # Créer l'intention de paiement
+        payment_intent = stripe_service.create_payment_intent(
+            amount=price,
+            currency='eur',
+            customer_id=customer_id
+        )
+        
+        # Créer la sandbox en statut "pending"
+        sandbox_id = str(uuid.uuid4())
+        expires_at = datetime.utcnow() + timedelta(hours=sandbox_data.duration_hours)
+        
         db_sandbox = Sandbox(
             id=sandbox_id,
             name=sandbox_data.name,
-            email=current_user.email,  # Utiliser l'email de l'utilisateur connecté
+            email=current_user.email,
             description=sandbox_data.description,
             duration_hours=sandbox_data.duration_hours,
             software_type_id=sandbox_data.software_type_id,
             price=price,
             user_id=current_user.id,
             expires_at=expires_at,
-            status="running"
+            status="pending",  # En attente de paiement
+            payment_status="pending",
+            stripe_payment_intent_id=payment_intent['id'],
+            stripe_customer_id=customer_id
         )
         
         db.add(db_sandbox)
         db.commit()
         db.refresh(db_sandbox)
         
+        return PaymentIntentResponse(
+            payment_intent_id=payment_intent['id'],
+            client_secret=payment_intent['client_secret'],
+            amount=payment_intent['amount'],
+            currency=payment_intent['currency'],
+            sandbox_id=sandbox_id
+        )
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur lors de la création de l'intention de paiement: {str(e)}"
+        )
+
+@router.post("/sandboxes/{sandbox_id}/confirm-payment", response_model=SandboxResponse, status_code=status.HTTP_200_OK)
+async def confirm_sandbox_payment(
+    sandbox_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Confirmer le paiement et activer la sandbox"""
+    try:
+        # Récupérer la sandbox
+        sandbox = db.query(Sandbox).filter(
+            Sandbox.id == sandbox_id,
+            Sandbox.user_id == current_user.id
+        ).first()
+        
+        if not sandbox:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sandbox non trouvée"
+            )
+        
+        if sandbox.status != "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La sandbox n'est pas en attente de paiement"
+            )
+        
+        # Vérifier le statut du paiement Stripe
+        stripe_service = StripeService(db)
+        payment_intent = stripe_service.get_payment_intent(sandbox.stripe_payment_intent_id)
+        
+        if payment_intent['status'] != 'succeeded':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Le paiement n'a pas été confirmé"
+            )
+        
+        # Mettre à jour le statut de la sandbox
+        sandbox.status = "running"
+        sandbox.payment_status = "paid"
+        db.commit()
+        
         # Déployer le conteneur Keycloak
         try:
             container_info = await docker_service.create_keycloak_container(sandbox_id)
-            db_sandbox.container_id = container_info['container_id']
-            db_sandbox.access_url = container_info['access_url']
-            db_sandbox.admin_username = container_info['admin_username']
-            db_sandbox.admin_password = container_info['admin_password']
+            sandbox.container_id = container_info['container_id']
+            sandbox.access_url = container_info['access_url']
+            sandbox.admin_username = container_info['admin_username']
+            sandbox.admin_password = container_info['admin_password']
             db.commit()
             
             # Envoyer l'email de notification
             await email_service.send_sandbox_created_email(
-                current_user.email,  # Utiliser l'email de l'utilisateur connecté
-                sandbox_data.name,
+                current_user.email,
+                sandbox.name,
                 container_info['access_url'],
                 container_info['admin_username'],
                 container_info['admin_password'],
-                expires_at
+                sandbox.expires_at
             )
             
         except Exception as e:
             # En cas d'erreur, marquer comme arrêtée
-            db_sandbox.status = "stopped"
+            sandbox.status = "stopped"
             db.commit()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Erreur lors du déploiement du conteneur: {str(e)}"
             )
         
-        return db_sandbox
+        return sandbox
         
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la création de la sandbox: {str(e)}"
+            detail=f"Erreur lors de la confirmation du paiement: {str(e)}"
         )
 
 @router.get("/sandboxes/", response_model=List[SandboxResponse])

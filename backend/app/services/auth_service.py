@@ -6,10 +6,12 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.auth import UserCreate, UserLogin
 from app.core.config import settings
+from app.services.google_auth_service import GoogleAuthService
 
 class AuthService:
     def __init__(self, db: Session):
         self.db = db
+        self.google_auth_service = GoogleAuthService()
 
     def create_user(self, user_data: UserCreate) -> User:
         """Create a new user"""
@@ -115,6 +117,48 @@ class AuthService:
         
         return user
 
+    def authenticate_google_user(self, token: str) -> User:
+        """Authenticate or create user with Google OAuth"""
+        # Vérifier le token Google
+        google_user_info = self.google_auth_service.verify_google_token_mock(token)
+        
+        if not google_user_info:
+            raise ValueError("Token Google invalide")
+        
+        # Vérifier si l'utilisateur existe déjà
+        user = self.db.query(User).filter(User.email == google_user_info['email']).first()
+        
+        if user:
+            # Mettre à jour les informations Google si nécessaire
+            if not user.google_id:
+                user.google_id = google_user_info['google_id']
+                user.avatar_url = google_user_info['picture']
+                user.is_verified = True
+                self.db.commit()
+                self.db.refresh(user)
+            return user
+        
+        # Créer un nouvel utilisateur
+        user = User(
+            id=str(uuid.uuid4()),
+            email=google_user_info['email'],
+            name=google_user_info['name'],
+            google_id=google_user_info['google_id'],
+            avatar_url=google_user_info['picture'],
+            is_verified=True
+        )
+        
+        # Ajouter automatiquement le rôle customer
+        from app.services.role_service import RoleService
+        customer_role = RoleService.get_or_create_customer_role(self.db)
+        user.roles.append(customer_role)
+        
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        
+        return user
+
     def create_google_user(self, email: str, name: str, google_id: str, avatar_url: Optional[str] = None) -> User:
         """Create or update user from Google OAuth"""
         # Check if user exists by email
@@ -138,6 +182,11 @@ class AuthService:
             avatar_url=avatar_url,
             is_verified=True
         )
+        
+        # Ajouter automatiquement le rôle customer
+        from app.services.role_service import RoleService
+        customer_role = RoleService.get_or_create_customer_role(self.db)
+        user.roles.append(customer_role)
         
         self.db.add(user)
         self.db.commit()

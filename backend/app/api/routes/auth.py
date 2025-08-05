@@ -50,32 +50,29 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
 
 @router.post("/google", response_model=AuthResponse)
 async def google_login(google_data: GoogleLogin, db: Session = Depends(get_db)):
-    """Login with Google OAuth (simulated for MVP)"""
+    """Login with Google OAuth"""
     auth_service = AuthService(db)
     
-    # For MVP, we'll simulate Google OAuth
-    # In production, you would verify the Google token
-    mock_google_user = {
-        "email": "google@example.com",
-        "name": "Utilisateur Google",
-        "google_id": "google-123",
-        "avatar_url": "https://via.placeholder.com/32"
-    }
-    
-    user = auth_service.create_google_user(
-        email=mock_google_user["email"],
-        name=mock_google_user["name"],
-        google_id=mock_google_user["google_id"],
-        avatar_url=mock_google_user["avatar_url"]
-    )
-    
-    token = auth_service.create_access_token(user)
-    user_response = auth_service.get_user_response(user)
-    
-    return AuthResponse(
-        token=token,
-        user=user_response
-    )
+    try:
+        # Authentifier l'utilisateur avec Google
+        user = auth_service.authenticate_google_user(google_data.token)
+        token = auth_service.create_access_token(user)
+        user_response = auth_service.get_user_response(user)
+        
+        return AuthResponse(
+            token=token,
+            user=user_response
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de l'authentification Google"
+        )
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(

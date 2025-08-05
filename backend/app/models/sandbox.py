@@ -10,12 +10,17 @@ class Sandbox(Base):
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    status = Column(String, default="running", nullable=False)  # running, stopped, expired
+    status = Column(String, default="pending", nullable=False)  # pending, running, stopped, expired, cancelled
     container_id = Column(String, nullable=True)
     access_url = Column(String, nullable=True)
     admin_username = Column(String, nullable=True)
     admin_password = Column(String, nullable=True)
     price = Column(Float, nullable=False, default=0.0)
+    currency = Column(String, default="eur", nullable=False)  # eur, usd, etc.
+    payment_status = Column(String, default="pending", nullable=False)  # pending, paid, failed, refunded
+    stripe_customer_id = Column(String, nullable=True)
+    stripe_payment_intent_id = Column(String, nullable=True)
+    stripe_subscription_id = Column(String, nullable=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     software_type_id = Column(String, ForeignKey("software_types.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

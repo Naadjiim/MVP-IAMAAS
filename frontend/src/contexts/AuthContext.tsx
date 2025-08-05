@@ -19,8 +19,11 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, name: string) => Promise<void>
+  googleLogin: (token: string) => Promise<void>
   logout: () => void
   refreshUser: () => Promise<void>
+  showInactivityWarning: boolean
+  extendSession: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -40,6 +43,8 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [lastActivity, setLastActivity] = useState<number>(Date.now())
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false)
 
   // Fonction pour sauvegarder le token de manière persistante
   const saveToken = (token: string) => {
@@ -67,6 +72,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const removeToken = () => {
     localStorage.removeItem('auth_token')
     sessionStorage.removeItem('auth_token')
+    localStorage.removeItem('last_activity')
+  }
+
+  // Fonction pour mettre à jour l'activité utilisateur
+  const updateActivity = () => {
+    const now = Date.now()
+    setLastActivity(now)
+    localStorage.setItem('last_activity', now.toString())
+  }
+
+  // Fonction pour vérifier l'inactivité (4 heures = 4 * 60 * 60 * 1000 ms)
+  const checkInactivity = () => {
+    const now = Date.now()
+    const fourHours = 4 * 60 * 60 * 1000 // 4 heures en millisecondes
+    const warningThreshold = 3.5 * 60 * 60 * 1000 // Avertissement 30 minutes avant
+    
+    if (now - lastActivity > fourHours) {
+      console.log('Déconnexion automatique due à l\'inactivité (4h)')
+      logout()
+    } else if (now - lastActivity > warningThreshold && !showInactivityWarning) {
+      console.log('Affichage de l\'avertissement d\'inactivité')
+      setShowInactivityWarning(true)
+    }
+  }
+
+  // Fonction pour étendre la session
+  const extendSession = () => {
+    updateActivity()
+    setShowInactivityWarning(false)
   }
 
   // Vérifier l'authentification au chargement
@@ -77,10 +111,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Token trouvé:', token ? 'Oui' : 'Non')
         
         if (token && token.trim() !== '') {
+          // Vérifier l'inactivité avant de récupérer les données utilisateur
+          const savedActivity = localStorage.getItem('last_activity')
+          if (savedActivity) {
+            const lastActivityTime = parseInt(savedActivity)
+            const now = Date.now()
+            const fourHours = 4 * 60 * 60 * 1000
+            
+            if (now - lastActivityTime > fourHours) {
+              console.log('Déconnexion automatique due à l\'inactivité (4h)')
+              removeToken()
+              setUser(null)
+              setIsLoading(false)
+              return
+            }
+            
+            setLastActivity(lastActivityTime)
+          }
+          
           console.log('Tentative de récupération des données utilisateur...')
           const userData = await apiService.getCurrentUser()
           console.log('Données utilisateur récupérées:', userData)
           setUser(userData)
+          updateActivity() // Mettre à jour l'activité après connexion réussie
         } else {
           console.log('Aucun token trouvé, utilisateur non connecté')
         }
@@ -96,11 +149,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth()
   }, [])
 
+  // Gestion de l'inactivité utilisateur
+  useEffect(() => {
+    if (!user) return // Ne pas surveiller si l'utilisateur n'est pas connecté
+
+    // Événements pour détecter l'activité utilisateur
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
+    
+    const handleActivity = () => {
+      updateActivity()
+    }
+
+    // Ajouter les event listeners
+    events.forEach(event => {
+      document.addEventListener(event, handleActivity, true)
+    })
+
+    // Timer pour vérifier l'inactivité toutes les minutes
+    const inactivityTimer = setInterval(() => {
+      checkInactivity()
+    }, 60000) // Vérifier toutes les minutes
+
+    // Cleanup
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, handleActivity, true)
+      })
+      clearInterval(inactivityTimer)
+    }
+  }, [user, lastActivity])
+
   const login = async (email: string, password: string) => {
     try {
       const response = await apiService.login(email, password)
       saveToken(response.token)
       setUser(response.user)
+      updateActivity() // Mettre à jour l'activité après connexion
+      // Rediriger vers le dashboard après connexion
+      if (typeof window !== 'undefined') {
+        window.location.href = '/dashboard'
+      }
     } catch (error) {
       console.error('Erreur de connexion:', error)
       throw error
@@ -112,8 +200,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await apiService.register(email, password, name)
       saveToken(response.token)
       setUser(response.user)
+      updateActivity() // Mettre à jour l'activité après inscription
+      // Rediriger vers le dashboard après inscription
+      if (typeof window !== 'undefined') {
+        window.location.href = '/dashboard'
+      }
     } catch (error) {
       console.error('Erreur lors de l\'inscription:', error)
+      throw error
+    }
+  }
+
+  const googleLogin = async (token: string) => {
+    try {
+      const response = await apiService.googleLogin(token)
+      saveToken(response.token)
+      setUser(response.user)
+      updateActivity() // Mettre à jour l'activité après connexion Google
+      // Rediriger vers le dashboard après connexion Google
+      if (typeof window !== 'undefined') {
+        window.location.href = '/dashboard'
+      }
+    } catch (error) {
+      console.error('Erreur de connexion Google:', error)
       throw error
     }
   }
@@ -140,8 +249,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated: !!user,
     login,
     register,
+    googleLogin,
     logout,
-    refreshUser
+    refreshUser,
+    showInactivityWarning,
+    extendSession
   }
 
   return (

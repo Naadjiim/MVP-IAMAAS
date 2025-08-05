@@ -9,7 +9,9 @@ import {
   Bars3Icon,
   ChartBarIcon,
   CreditCardIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  SunIcon,
+  MoonIcon
 } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -36,7 +38,7 @@ export default function Sidebar({
   onToggleCollapse 
 }: SidebarProps) {
   const { user, logout } = useAuth()
-  const { theme } = useTheme()
+  const { theme, toggleTheme } = useTheme()
 
   const navigation = [
     { name: 'Explorer', href: 'dashboard', icon: HomeIcon, current: activeTab === 'dashboard' },
@@ -66,21 +68,21 @@ export default function Sidebar({
     <>
       {/* Sidebar */}
               <div className={`
-          w-64 h-screen bg-white dark:bg-dark-surface border-r border-gray-200 dark:border-gray-600 
+          w-64 h-screen bg-gradient-to-b from-indigo-600 to-purple-700 border-r border-indigo-500 
           flex flex-col fixed left-0 top-0 overflow-y-auto z-50
         `}>
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-600">
+          <div className="flex h-16 items-center justify-between px-4 border-b border-white/20">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-7 w-7 bg-blue-600 rounded flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">IA</span>
+                <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-indigo-600 font-bold text-sm">GL</span>
                 </div>
               </div>
               <div className="ml-3">
-                <h1 className="text-base font-semibold text-gray-900 dark:text-white">IAMAAS</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Identity Access Management</p>
+                <h1 className="text-base font-semibold text-white">GateLabs</h1>
+                <p className="text-xs text-indigo-100">Identity Access Management</p>
               </div>
             </div>
             
@@ -94,23 +96,23 @@ export default function Sidebar({
                     alt={user.name || 'Avatar utilisateur'}
                   />
                 ) : (
-                  <div className="h-6 w-6 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                    <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <div className="h-6 w-6 bg-white/20 rounded-full flex items-center justify-center">
+                    <UserIcon className="h-4 w-4 text-white" />
                   </div>
                 )}
                 
                 {/* Hover Menu */}
-                <div className="absolute right-0 top-8 w-32 bg-white dark:bg-dark-surface rounded-md shadow-lg border border-gray-200 dark:border-gray-600 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="absolute right-0 top-8 w-32 bg-white rounded-md shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="py-1">
                     <button
                       onClick={() => window.location.href = '/profile'}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Mon profil
                     </button>
                     <button
                       onClick={logout}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Déconnexion
                     </button>
@@ -122,15 +124,31 @@ export default function Sidebar({
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-2">
+            {/* Theme Toggle Button */}
+            <div className="mb-4 px-3">
+              <button
+                onClick={toggleTheme}
+                className="w-full flex items-center justify-center px-3 py-2.5 text-sm font-medium rounded-lg bg-white/10 text-indigo-100 hover:bg-white/20 hover:text-white transition-all duration-200"
+                aria-label={theme === 'light' ? 'Passer au mode sombre' : 'Passer au mode clair'}
+              >
+                {theme === 'light' ? (
+                  <MoonIcon className="h-4 w-4 mr-2" />
+                ) : (
+                  <SunIcon className="h-4 w-4 mr-2" />
+                )}
+                {theme === 'light' ? 'Mode sombre' : 'Mode clair'}
+              </button>
+            </div>
+            
             {navigation.map((item) => (
               <button
                 key={item.name}
                 onClick={() => handleNavigation(item.href)}
                 className={`
-                  group flex items-center px-3 py-2.5 text-sm font-medium rounded w-full mb-1
+                  group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg w-full mb-1 transition-all duration-200
                   ${item.current
-                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                    ? 'bg-white text-indigo-600 shadow-lg'
+                    : 'text-indigo-100 hover:bg-white/10 hover:text-white'
                   }
                 `}
               >
@@ -138,8 +156,8 @@ export default function Sidebar({
                   className={`
                     mr-3 h-4 w-4 flex-shrink-0
                     ${item.current
-                      ? 'text-blue-500 dark:text-blue-400'
-                      : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
+                      ? 'text-indigo-600'
+                      : 'text-indigo-200 group-hover:text-white'
                     }
                   `}
                 />
@@ -150,17 +168,17 @@ export default function Sidebar({
             {/* Navigation admin */}
             {user?.roles?.includes('admin') && (
               <>
-                <div className="border-t border-gray-200 dark:border-gray-600 my-3"></div>
-                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-3 mb-2">Administration</div>
+                <div className="border-t border-white/20 my-3"></div>
+                <div className="text-xs font-medium text-indigo-200 px-3 mb-2">Administration</div>
                 {adminNavigation.map((item) => (
                   <button
                     key={item.name}
                     onClick={() => handleNavigation(item.href)}
                     className={`
-                      group flex items-center px-3 py-2.5 text-sm font-medium rounded w-full mb-1
+                      group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg w-full mb-1 transition-all duration-200
                       ${item.current
-                        ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                        ? 'bg-white text-indigo-600 shadow-lg'
+                        : 'text-indigo-100 hover:bg-white/10 hover:text-white'
                       }
                     `}
                   >
@@ -168,8 +186,8 @@ export default function Sidebar({
                       className={`
                         mr-3 h-4 w-4 flex-shrink-0
                         ${item.current
-                          ? 'text-red-500 dark:text-red-400'
-                          : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400'
+                          ? 'text-indigo-600'
+                          : 'text-indigo-200 group-hover:text-white'
                         }
                       `}
                     />

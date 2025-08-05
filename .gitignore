@@ -88,4 +88,16 @@ Thumbs.db
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Next.js cache
+.next/
+out/
+
+# Docker volumes
+postgres_data/ 

@@ -38,6 +38,8 @@ export interface User {
   roles: string[]
   is_active: boolean
   is_verified: boolean
+  avatar_url?: string
+  google_id?: string
   created_at: string
 }
 
@@ -114,6 +116,11 @@ export const getPricing = async (): Promise<any> => {
 }
 
 export const apiService = {
+  async createSandboxPayment(data: CreateSandboxRequest): Promise<any> {
+    const response = await api.post('/api/v1/sandboxes/', data)
+    return response.data
+  },
+
   async createSandbox(data: CreateSandboxRequest): Promise<SandboxResponse> {
     const response = await api.post('/api/v1/sandboxes/', data)
     return response.data

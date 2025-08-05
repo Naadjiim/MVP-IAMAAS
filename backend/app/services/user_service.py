@@ -165,6 +165,7 @@ class UserService:
             "is_active": user.is_active,
             "is_verified": user.is_verified,
             "avatar_url": user.avatar_url,
+            "google_id": user.google_id,
             "roles": [role.name for role in user.roles],
             "created_at": user.created_at.isoformat() if user.created_at else None
         } 
