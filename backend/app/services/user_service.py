@@ -3,7 +3,12 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.auth import UserResponse, UserUpdate
 from app.services.role_service import RoleService
+from app.services.sandbox_service import SandboxService
+from app.services.docker_service import DockerService
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserService:
     @staticmethod
@@ -137,6 +142,62 @@ class UserService:
         db.delete(user)
         db.commit()
         return True
+    
+    @staticmethod
+    async def delete_user_with_sandboxes(db: Session, user_id: str) -> bool:
+        """Supprime un utilisateur et toutes ses sandboxes (admin seulement)"""
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise ValueError("Utilisateur non trouvé")
+        
+        # Empêcher la suppression des admins
+        if user.has_role("admin"):
+            raise ValueError("Impossible de supprimer un utilisateur avec le rôle admin")
+        
+        try:
+            # Récupérer toutes les sandboxes de l'utilisateur
+            user_sandboxes = SandboxService.get_sandboxes_by_user_id(db, user_id)
+            
+            # Supprimer les conteneurs Docker de chaque sandbox
+            docker_service = DockerService()
+            deleted_containers = 0
+            
+            for sandbox in user_sandboxes:
+                if sandbox.container_name:
+                    try:
+                        # Déterminer le type de logiciel pour utiliser la bonne méthode de suppression
+                        if sandbox.software_type_id:
+                            # Utiliser la méthode générique pour les nouveaux types de logiciels
+                            success = await docker_service.delete_iam_sandbox(sandbox.container_name)
+                        else:
+                            # Fallback pour les anciennes sandboxes Keycloak
+                            success = await docker_service.delete_keycloak_container(sandbox.container_name)
+                        
+                        if success:
+                            deleted_containers += 1
+                            logger.info(f"Conteneur Docker supprimé: {sandbox.container_name}")
+                        else:
+                            logger.warning(f"Échec de la suppression du conteneur: {sandbox.container_name}")
+                            
+                    except Exception as e:
+                        logger.error(f"Erreur lors de la suppression du conteneur {sandbox.container_name}: {str(e)}")
+                        # Continuer même si la suppression du conteneur échoue
+            
+            # Supprimer toutes les sandboxes de la base de données
+            for sandbox in user_sandboxes:
+                db.delete(sandbox)
+            
+            # Supprimer l'utilisateur
+            db.delete(user)
+            db.commit()
+            
+            logger.info(f"Utilisateur {user.email} supprimé avec {len(user_sandboxes)} sandboxes et {deleted_containers} conteneurs")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la suppression de l'utilisateur {user.email}: {str(e)}")
+            db.rollback()
+            raise ValueError(f"Erreur lors de la suppression: {str(e)}")
     
     @staticmethod
     def create_admin_user(db: Session) -> User:

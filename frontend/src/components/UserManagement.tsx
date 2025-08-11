@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { apiService } from '@/services/api'
 import ConfirmModal from './ConfirmModal'
 import ErrorModal from './ErrorModal'
+import UserDeleteModal from './UserDeleteModal'
 
 interface User {
   id: string
@@ -25,8 +26,11 @@ export default function UserManagement() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showDeactivateModal, setShowDeactivateModal] = useState(false)
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [errorDetails, setErrorDetails] = useState<{ title: string; message: string; details?: string } | null>(null)
+  const [successDetails, setSuccessDetails] = useState<{ title: string; message: string; details?: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -96,13 +100,32 @@ export default function UserManagement() {
     setShowDeleteModal(true)
   }
 
-  const confirmDeleteUser = async () => {
+  const confirmDeleteUser = async (deletedSandboxes: Array<{
+    id: string
+    name: string
+    status: string
+    container_name?: string
+  }>) => {
     if (!selectedUser) return
 
     try {
-      await apiService.deleteUser(selectedUser.id)
+      setIsDeleting(true)
+      
+      // Utiliser la nouvelle méthode qui supprime l'utilisateur et ses sandboxes
+      const result = await apiService.deleteUserWithSandboxes(selectedUser.id)
+      
+      // Afficher le message de succès avec les détails
+      setSuccessDetails({
+        title: 'Utilisateur supprimé avec succès',
+        message: `L'utilisateur "${selectedUser.name}" a été supprimé.`,
+        details: `Sandboxes supprimées: ${result.deleted_sandboxes_count}`
+      })
+      setShowSuccessModal(true)
+      
       await loadUsers() // Recharger la liste
       setSelectedUser(null)
+      setShowDeleteModal(false)
+      
     } catch (err: any) {
       console.error('Erreur lors de la suppression:', err)
       setErrorDetails({
@@ -111,6 +134,8 @@ export default function UserManagement() {
         details: err.response?.data?.detail || err.message
       })
       setShowErrorModal(true)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -316,15 +341,12 @@ export default function UserManagement() {
         </div>
       </div>
 
-      <ConfirmModal
+      <UserDeleteModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDeleteUser}
-        title="Supprimer l'utilisateur"
-        message={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${selectedUser?.name}" ? Cette action est irréversible.`}
-        confirmText="Supprimer"
-        cancelText="Annuler"
-        type="danger"
+        user={selectedUser}
+        isLoading={isDeleting}
       />
 
       <ConfirmModal
@@ -345,6 +367,16 @@ export default function UserManagement() {
           title={errorDetails.title}
           message={errorDetails.message}
           details={errorDetails.details}
+        />
+      )}
+
+      {successDetails && (
+        <ErrorModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          title={successDetails.title}
+          message={successDetails.message}
+          details={successDetails.details}
         />
       )}
     </div>

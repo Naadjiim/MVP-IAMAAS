@@ -340,9 +340,19 @@ async def delete_sandbox(
         if sandbox.container_name:
             try:
                 docker_service = DockerService()
-                await docker_service.delete_keycloak_container(sandbox.container_name)
+                
+                # Déterminer le type de logiciel pour utiliser la bonne méthode de suppression
+                if sandbox.software_type_id:
+                    # Utiliser la méthode générique pour les nouveaux types de logiciels
+                    await docker_service.delete_iam_sandbox(sandbox.container_name)
+                else:
+                    # Fallback pour les anciennes sandboxes Keycloak
+                    await docker_service.delete_keycloak_container(sandbox.container_name)
+                    
+                logger.info(f"Conteneur Docker supprimé: {sandbox.container_name}")
             except Exception as e:
                 logger.warning(f"Erreur lors de la suppression du conteneur {sandbox.container_name}: {str(e)}")
+                # Continuer même si la suppression du conteneur échoue
         
         # Supprimer la sandbox de la base de données
         db.delete(sandbox)

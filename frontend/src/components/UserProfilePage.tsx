@@ -276,7 +276,7 @@ export default function UserProfilePage() {
             </h3>
             <div className="space-y-3">
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = '/dashboard'}
                 className="w-full btn-secondary"
               >
                 Retour au tableau de bord

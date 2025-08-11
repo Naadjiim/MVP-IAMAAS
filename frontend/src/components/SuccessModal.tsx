@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { CheckCircleIcon } from '@heroicons/react/24/outline'
 
@@ -22,6 +22,8 @@ interface SuccessModalProps {
 }
 
 export default function SuccessModal({ isOpen, onClose, sandbox, onViewSandboxes }: SuccessModalProps) {
+  const [showPassword, setShowPassword] = useState(false)
+  
   if (!sandbox) return null
 
   const formatDate = (dateString: string) => {
@@ -96,9 +98,18 @@ export default function SuccessModal({ isOpen, onClose, sandbox, onViewSandboxes
                             </div>
                           )}
                           {sandbox.admin_password && (
-                            <div>
+                            <div className="flex items-center">
                               <span className="font-medium text-gray-700 dark:text-gray-300">Mot de passe admin :</span>
-                              <span className="ml-2 text-gray-900 dark:text-white">{sandbox.admin_password}</span>
+                              <span className="ml-2 text-gray-900 dark:text-white">
+                                {showPassword ? sandbox.admin_password : '••••••••••••••••'}
+                              </span>
+                              <button
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="ml-2 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                                title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                              >
+                                {showPassword ? "Masquer" : "Voir"}
+                              </button>
                             </div>
                           )}
                         </div>

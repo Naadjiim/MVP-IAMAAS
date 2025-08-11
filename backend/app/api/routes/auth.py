@@ -210,14 +210,62 @@ async def delete_account(
 ):
     """Delete user account and all associated sandboxes"""
     try:
-        # Delete user (sandboxes will be deleted automatically due to cascade)
+        # Empêcher la suppression des admins
+        if current_user.has_role("admin"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Impossible de supprimer un compte administrateur"
+            )
+        
+        # Utiliser le service pour supprimer l'utilisateur et ses sandboxes
+        from app.services.user_service import UserService
+        from app.services.sandbox_service import SandboxService
+        from app.services.docker_service import DockerService
+        
         user_email = current_user.email
+        user_id = current_user.id
+        
+        # Récupérer toutes les sandboxes de l'utilisateur
+        user_sandboxes = SandboxService.get_sandboxes_by_user_id(db, user_id)
+        
+        # Supprimer les conteneurs Docker de chaque sandbox
+        docker_service = DockerService()
+        deleted_containers = 0
+        
+        for sandbox in user_sandboxes:
+            if sandbox.container_name:
+                try:
+                    # Déterminer le type de logiciel pour utiliser la bonne méthode de suppression
+                    if sandbox.software_type_id:
+                        # Utiliser la méthode générique pour les nouveaux types de logiciels
+                        success = await docker_service.delete_iam_sandbox(sandbox.container_name)
+                    else:
+                        # Fallback pour les anciennes sandboxes Keycloak
+                        success = await docker_service.delete_keycloak_container(sandbox.container_name)
+                    
+                    if success:
+                        deleted_containers += 1
+                        logger.info(f"Conteneur Docker supprimé: {sandbox.container_name}")
+                    else:
+                        logger.warning(f"Échec de la suppression du conteneur: {sandbox.container_name}")
+                        
+                except Exception as e:
+                    logger.error(f"Erreur lors de la suppression du conteneur {sandbox.container_name}: {str(e)}")
+                    # Continuer même si la suppression du conteneur échoue
+        
+        # Supprimer toutes les sandboxes de la base de données
+        for sandbox in user_sandboxes:
+            db.delete(sandbox)
+        
+        # Supprimer l'utilisateur
         db.delete(current_user)
         db.commit()
         
-        logger.info(f"Compte supprimé: {user_email}")
+        logger.info(f"Compte supprimé: {user_email} avec {len(user_sandboxes)} sandboxes et {deleted_containers} conteneurs")
         
         return {"message": "Compte supprimé avec succès"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erreur lors de la suppression du compte: {str(e)}")
         db.rollback()

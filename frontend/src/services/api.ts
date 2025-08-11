@@ -107,7 +107,7 @@ export const changePassword = async (currentPassword: string, newPassword: strin
 }
 
 export const deleteAccount = async (): Promise<void> => {
-  await api.delete('/api/v1/auth/account')
+  await api.delete('/api/v1/auth/profile')
 }
 
 export const getPricing = async (): Promise<any> => {
@@ -253,5 +253,24 @@ export const apiService = {
 
   async deleteUser(userId: string): Promise<void> {
     await api.delete(`/api/v1/admin/users/${userId}`)
+  },
+
+  async getUserSandboxes(userId: string): Promise<SandboxResponse[]> {
+    const response = await api.get(`/api/v1/admin/users/${userId}/sandboxes`)
+    return response.data
+  },
+
+  async deleteUserWithSandboxes(userId: string): Promise<{
+    message: string
+    deleted_sandboxes_count: number
+    deleted_sandboxes: Array<{
+      id: string
+      name: string
+      status: string
+      container_name?: string
+    }>
+  }> {
+    const response = await api.delete(`/api/v1/admin/users/${userId}`)
+    return response.data
   }
 } 

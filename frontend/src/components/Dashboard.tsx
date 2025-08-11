@@ -186,7 +186,7 @@ export default function Dashboard() {
         <h2 className="text-base font-medium text-gray-900 dark:text-white mb-3">Actions rapides</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button
-            onClick={() => window.location.href = '/?tab=create'}
+            onClick={() => window.location.href = '/dashboard?tab=create'}
             className="flex items-center justify-center p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
             <PlusIcon className="h-5 w-5 text-gray-400 mr-2" />
@@ -194,7 +194,7 @@ export default function Dashboard() {
           </button>
           
           <button
-            onClick={() => window.location.href = '/?tab=list'}
+            onClick={() => window.location.href = '/dashboard?tab=list'}
             className="flex items-center justify-center p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
           >
             <EyeIcon className="h-5 w-5 text-gray-400 mr-2" />
@@ -240,7 +240,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-medium text-gray-900 dark:text-white">Sandboxes récentes</h2>
           <button
-            onClick={() => window.location.href = '/?tab=list'}
+            onClick={() => window.location.href = '/dashboard?tab=list'}
             className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
           >
             Voir tout
@@ -252,7 +252,7 @@ export default function Dashboard() {
             <CubeIcon className="h-10 w-10 text-gray-400 mx-auto mb-3" />
             <p className="text-sm text-gray-500 dark:text-gray-400">Aucune sandbox créée</p>
             <button
-              onClick={() => window.location.href = '/?tab=create'}
+              onClick={() => window.location.href = '/dashboard?tab=create'}
               className="mt-2 btn-primary text-sm px-3 py-1.5"
             >
               Créer votre première sandbox

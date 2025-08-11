@@ -528,7 +528,7 @@ export default function SandboxForm() {
         sandbox={createdSandbox}
         onViewSandboxes={() => {
           setShowSuccessModal(false)
-          window.location.href = '/?tab=list'
+          window.location.href = '/dashboard?tab=list'
         }}
       />
       

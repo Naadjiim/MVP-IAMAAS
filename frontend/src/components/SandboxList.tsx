@@ -33,6 +33,7 @@ export default function SandboxList() {
   const [fixPasswordModalOpen, setFixPasswordModalOpen] = useState(false)
   const [sandboxToFix, setSandboxToFix] = useState<Sandbox | null>(null)
   const [fixingPassword, setFixingPassword] = useState(false)
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchSandboxes()
@@ -108,6 +109,16 @@ export default function SandboxList() {
     } finally {
       setFixingPassword(false)
     }
+  }
+
+  const togglePasswordVisibility = (sandboxId: string) => {
+    const newVisiblePasswords = new Set(visiblePasswords)
+    if (newVisiblePasswords.has(sandboxId)) {
+      newVisiblePasswords.delete(sandboxId)
+    } else {
+      newVisiblePasswords.add(sandboxId)
+    }
+    setVisiblePasswords(newVisiblePasswords)
   }
 
   const formatDate = (dateString: string) => {
@@ -187,11 +198,21 @@ export default function SandboxList() {
                       <span className="font-medium text-gray-700 dark:text-gray-300">Utilisateur:</span>
                       <span className="ml-2 text-gray-900 dark:text-white">{sandbox.admin_username}</span>
                     </div>
-                    <div>
+                    <div className="flex items-center">
                       <span className="font-medium text-gray-700 dark:text-gray-300">Mot de passe:</span>
                       <span className="ml-2 text-gray-900 dark:text-white">
-                        {sandbox.admin_password || 'Non disponible'}
+                        {visiblePasswords.has(sandbox.id) 
+                          ? (sandbox.admin_password || 'Non disponible')
+                          : '••••••••••••••••'
+                        }
                       </span>
+                      <button
+                        onClick={() => togglePasswordVisibility(sandbox.id)}
+                        className="ml-2 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                        title={visiblePasswords.has(sandbox.id) ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                      >
+                        {visiblePasswords.has(sandbox.id) ? "Masquer" : "Voir"}
+                      </button>
                     </div>
                   </div>
                 </div>

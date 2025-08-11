@@ -101,19 +101,50 @@ async def activate_user(
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
     return {"message": f"Utilisateur {user.email} activé"}
 
+@router.get("/users/{user_id}/sandboxes")
+async def get_user_sandboxes(
+    user_id: str,
+    current_user = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Récupère les sandboxes d'un utilisateur spécifique (admin seulement)"""
+    from app.services.sandbox_service import SandboxService
+    sandboxes = SandboxService.get_sandboxes_by_user_id(db, user_id)
+    return sandboxes
+
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: str,
     current_user = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
-    """Supprime un utilisateur (admin seulement)"""
+    """Supprime un utilisateur et ses sandboxes (admin seulement)"""
     if current_user.id == user_id:
         raise HTTPException(status_code=400, detail="Vous ne pouvez pas supprimer votre propre compte")
     
     try:
-        success = UserService.delete_user(db, user_id)
-        return {"message": "Utilisateur supprimé avec succès"}
+        # Récupérer les sandboxes de l'utilisateur avant suppression
+        from app.services.sandbox_service import SandboxService
+        user_sandboxes = SandboxService.get_sandboxes_by_user_id(db, user_id)
+        
+        # Supprimer l'utilisateur et ses sandboxes
+        success = await UserService.delete_user_with_sandboxes(db, user_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        
+        return {
+            "message": "Utilisateur supprimé avec succès",
+            "deleted_sandboxes_count": len(user_sandboxes),
+            "deleted_sandboxes": [
+                {
+                    "id": sandbox.id,
+                    "name": sandbox.name,
+                    "status": sandbox.status,
+                    "container_name": sandbox.container_name
+                } for sandbox in user_sandboxes
+            ]
+        }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -135,7 +166,7 @@ async def delete_sandbox(
 ):
     """Supprime une sandbox (admin seulement)"""
     from app.services.sandbox_service import SandboxService
-    success = SandboxService.delete_sandbox(db, sandbox_id)
+    success = await SandboxService.delete_sandbox(db, sandbox_id)
     if not success:
         raise HTTPException(status_code=404, detail="Sandbox non trouvée")
     return {"message": "Sandbox supprimée avec succès"} 

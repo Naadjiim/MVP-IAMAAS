@@ -58,7 +58,7 @@ export default function Sidebar({
   const handleNavigation = (href: string) => {
     // Si on est sur la page profile, rediriger vers la page principale avec le bon onglet
     if (activeTab === 'profile') {
-      window.location.href = `/?tab=${href}`
+      window.location.href = `/dashboard?tab=${href}`
     } else {
       onTabChange(href)
     }
