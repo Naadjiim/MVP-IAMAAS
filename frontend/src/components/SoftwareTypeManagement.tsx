@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
 import ConfirmModal from './ConfirmModal'
+import { apiService } from '@/services/api'
 
 interface SoftwareType {
   id: string
@@ -15,11 +16,7 @@ interface SoftwareType {
   updated_at?: string
 }
 
-interface SoftwareTypeManagementProps {
-  token: string
-}
-
-export default function SoftwareTypeManagement({ token }: SoftwareTypeManagementProps) {
+export default function SoftwareTypeManagement() {
   const { theme } = useTheme()
   const [softwareTypes, setSoftwareTypes] = useState<SoftwareType[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,18 +39,7 @@ export default function SoftwareTypeManagement({ token }: SoftwareTypeManagement
   const fetchSoftwareTypes = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:8000/api/v1/admin/software-types', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des types de logiciels')
-      }
-      
-      const data = await response.json()
+      const data = await apiService.getAdminSoftwareTypes()
       setSoftwareTypes(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
@@ -64,19 +50,7 @@ export default function SoftwareTypeManagement({ token }: SoftwareTypeManagement
 
   const handleCreateSoftwareType = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/admin/software-types', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création du type de logiciel')
-      }
-      
+      await apiService.createSoftwareType(formData)
       setShowCreateModal(false)
       setFormData({ name: '', description: '', base_price_per_hour: 0, is_active: 'true' })
       fetchSoftwareTypes()
@@ -89,19 +63,7 @@ export default function SoftwareTypeManagement({ token }: SoftwareTypeManagement
     if (!selectedType) return
     
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/admin/software-types/${selectedType.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la modification du type de logiciel')
-      }
-      
+      await apiService.updateSoftwareType(selectedType.id, formData)
       setShowEditModal(false)
       setSelectedType(null)
       setFormData({ name: '', description: '', base_price_per_hour: 0, is_active: 'true' })
@@ -120,17 +82,7 @@ export default function SoftwareTypeManagement({ token }: SoftwareTypeManagement
     if (!selectedType) return
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/admin/software-types/${selectedType.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la suppression du type de logiciel')
-      }
-      
+      await apiService.deleteSoftwareType(selectedType.id)
       setShowDeleteModal(false)
       setSelectedType(null)
       fetchSoftwareTypes()

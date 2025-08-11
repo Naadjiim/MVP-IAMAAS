@@ -1,0 +1,23 @@
+{
+  "port_range": {
+    "start": 8080,
+    "end": 8099,
+    "max_sandboxes": 20
+  },
+  "network": {
+    "name": "iamaas-network",
+    "driver": "bridge",
+    "subnet": "172.20.0.0/16"
+  },
+  "keycloak": {
+    "image": "quay.io/keycloak/keycloak:23.0.3",
+    "admin_user": "admin",
+    "container_prefix": "iamaas-keycloak-",
+    "health_check": {
+      "interval": 30000000000,
+      "timeout": 10000000000,
+      "retries": 3,
+      "start_period": 60000000000
+    }
+  }
+} 

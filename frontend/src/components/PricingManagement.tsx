@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
 import ConfirmModal from './ConfirmModal'
+import { apiService } from '@/services/api'
 
 interface Pricing {
   id: string
@@ -20,11 +21,7 @@ interface SoftwareType {
   name: string
 }
 
-interface PricingManagementProps {
-  token: string
-}
-
-export default function PricingManagement({ token }: PricingManagementProps) {
+export default function PricingManagement() {
   const { theme } = useTheme()
   const [pricing, setPricing] = useState<Pricing[]>([])
   const [softwareTypes, setSoftwareTypes] = useState<SoftwareType[]>([])
@@ -49,34 +46,13 @@ export default function PricingManagement({ token }: PricingManagementProps) {
     try {
       setLoading(true)
       
-      // Récupérer les tarifs
-      const pricingResponse = await fetch('http://localhost:8000/api/v1/admin/pricing', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      // Récupérer les tarifs et types de logiciels
+      const [pricingData, typesData] = await Promise.all([
+        apiService.getAdminPricing(),
+        apiService.getAdminSoftwareTypes()
+      ])
       
-      if (!pricingResponse.ok) {
-        throw new Error('Erreur lors de la récupération des tarifs')
-      }
-      
-      const pricingData = await pricingResponse.json()
       setPricing(pricingData)
-      
-      // Récupérer les types de logiciels
-      const typesResponse = await fetch('http://localhost:8000/api/v1/admin/software-types', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (!typesResponse.ok) {
-        throw new Error('Erreur lors de la récupération des types de logiciels')
-      }
-      
-      const typesData = await typesResponse.json()
       setSoftwareTypes(typesData)
       
     } catch (err) {
@@ -88,19 +64,7 @@ export default function PricingManagement({ token }: PricingManagementProps) {
 
   const handleCreatePricing = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/admin/pricing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création du tarif')
-      }
-      
+      await apiService.createPricing(formData)
       setShowCreateModal(false)
       setFormData({ software_type_id: '', duration_hours: 1, price: 0, is_active: 'true' })
       fetchData()
@@ -113,19 +77,7 @@ export default function PricingManagement({ token }: PricingManagementProps) {
     if (!selectedPricing) return
     
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/admin/pricing/${selectedPricing.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la modification du tarif')
-      }
-      
+      await apiService.updatePricing(selectedPricing.id, formData)
       setShowEditModal(false)
       setSelectedPricing(null)
       setFormData({ software_type_id: '', duration_hours: 1, price: 0, is_active: 'true' })
@@ -144,17 +96,7 @@ export default function PricingManagement({ token }: PricingManagementProps) {
     if (!selectedPricing) return
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/admin/pricing/${selectedPricing.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la suppression du tarif')
-      }
-      
+      await apiService.deletePricing(selectedPricing.id)
       setShowDeleteModal(false)
       setSelectedPricing(null)
       fetchData()

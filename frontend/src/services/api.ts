@@ -183,6 +183,58 @@ export const apiService = {
     return response.data
   },
 
+  async getAdminSoftwareTypes(): Promise<{id: string, name: string, description: string, base_price_per_hour: number}[]> {
+    const response = await api.get('/api/v1/admin/software-types')
+    return response.data
+  },
+
+  async getAdminPricing(): Promise<any[]> {
+    const response = await api.get('/api/v1/admin/pricing')
+    return response.data
+  },
+
+  async createSoftwareType(data: any): Promise<any> {
+    const response = await api.post('/api/v1/admin/software-types', data)
+    return response.data
+  },
+
+  async updateSoftwareType(id: string, data: any): Promise<any> {
+    const response = await api.put(`/api/v1/admin/software-types/${id}`, data)
+    return response.data
+  },
+
+  async deleteSoftwareType(id: string): Promise<void> {
+    await api.delete(`/api/v1/admin/software-types/${id}`)
+  },
+
+  async createPricing(data: any): Promise<any> {
+    const response = await api.post('/api/v1/admin/pricing', data)
+    return response.data
+  },
+
+  async updatePricing(id: string, data: any): Promise<any> {
+    const response = await api.put(`/api/v1/admin/pricing/${id}`, data)
+    return response.data
+  },
+
+  async deletePricing(id: string): Promise<void> {
+    await api.delete(`/api/v1/admin/pricing/${id}`)
+  },
+
+  async createRole(data: any): Promise<any> {
+    const response = await api.post('/api/v1/admin/roles', data)
+    return response.data
+  },
+
+  async updateRole(id: string, data: any): Promise<any> {
+    const response = await api.put(`/api/v1/admin/roles/${id}`, data)
+    return response.data
+  },
+
+  async deleteRole(id: string): Promise<void> {
+    await api.delete(`/api/v1/admin/roles/${id}`)
+  },
+
   async addRoleToUser(userId: string, roleName: string): Promise<void> {
     await api.post(`/api/v1/admin/users/${userId}/roles`, { role_name: roleName })
   },

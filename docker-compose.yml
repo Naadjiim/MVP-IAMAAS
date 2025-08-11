@@ -18,20 +18,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-  # Redis pour Celery (optionnel pour le MVP)
-  redis:
-    image: redis:7-alpine
-    container_name: iamaas-redis
-    ports:
-      - "6379:6379"
-    networks:
-      - iamaas-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    restart: unless-stopped
 
   # Backend FastAPI
   backend:
@@ -41,7 +28,6 @@ services:
     container_name: iamaas-backend
     environment:
       - DATABASE_URL=postgresql://iamaas:iamaas@postgres:5432/iamaas
-      - REDIS_URL=redis://redis:6379/0
       - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
       - FROM_EMAIL=${FROM_EMAIL:-noreply@iamaas.com}
       - FROM_NAME=${FROM_NAME:-IAMAAS Platform}
@@ -50,12 +36,13 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
+      - ./backend/app:/app/app
+      - ./backend/requirements.txt:/app/requirements.txt
+      - ./backend/init_admin_docker.py:/app/init_admin_docker.py
+      - ./infra:/app/infra
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - iamaas-network

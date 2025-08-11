@@ -26,9 +26,16 @@ class StripeService:
         except Exception as e:
             raise ValueError(f"Erreur lors de la création du client Stripe: {str(e)}")
 
-    def create_payment_intent(self, amount: float, currency: str = 'eur', customer_id: Optional[str] = None) -> Dict[str, Any]:
+    def create_payment_intent(self, amount: float, currency: str = 'eur', customer_id: Optional[str] = None, metadata: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """Créer une intention de paiement Stripe"""
         try:
+            # Vérifier la configuration Stripe
+            if not stripe.api_key or stripe.api_key == 'sk_test_...':
+                raise ValueError("Clé API Stripe non configurée ou invalide")
+            
+            print(f"Création d'intention de paiement: amount={amount}, currency={currency}, customer_id={customer_id}")
+            print(f"Métadonnées: {metadata}")
+            
             payment_intent_data = {
                 'amount': int(amount * 100),  # Stripe utilise les centimes
                 'currency': currency,
@@ -43,7 +50,11 @@ class StripeService:
             
             if customer_id:
                 payment_intent_data['customer'] = customer_id
+                
+            if metadata:
+                payment_intent_data['metadata'].update(metadata)
 
+            print(f"Données d'intention de paiement: {payment_intent_data}")
             payment_intent = stripe.PaymentIntent.create(**payment_intent_data)
             
             return {
@@ -119,10 +130,22 @@ class StripeService:
                 'amount': payment_intent.amount,
                 'currency': payment_intent.currency,
                 'customer': payment_intent.customer,
-                'created': payment_intent.created
+                'created': payment_intent.created,
+                'metadata': payment_intent.metadata
             }
         except Exception as e:
             raise ValueError(f"Erreur lors de la récupération du paiement: {str(e)}")
+
+    def update_payment_intent_metadata(self, payment_intent_id: str, metadata: Dict[str, str]) -> bool:
+        """Mettre à jour les métadonnées d'une intention de paiement"""
+        try:
+            stripe.PaymentIntent.modify(
+                payment_intent_id,
+                metadata=metadata
+            )
+            return True
+        except Exception as e:
+            raise ValueError(f"Erreur lors de la mise à jour des métadonnées: {str(e)}")
 
     def update_sandbox_payment_status(self, sandbox_id: str, payment_intent_id: str) -> Sandbox:
         """Mettre à jour le statut de paiement d'une sandbox"""

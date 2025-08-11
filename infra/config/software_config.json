@@ -1,0 +1,112 @@
+{
+  "software_types": {
+    "keycloak": {
+      "name": "Keycloak",
+      "version": "23.0.3",
+      "image": "quay.io/keycloak/keycloak:23.0.3",
+      "container_prefix": "iamaas-keycloak-",
+      "admin_user": "admin",
+      "default_port": 8080,
+      "health_check": {
+        "interval": 30000000000,
+        "timeout": 10000000000,
+        "retries": 3,
+        "start_period": 60000000000
+      },
+      "environment": {
+        "KC_DB": "dev-file",
+        "KC_HOSTNAME_STRICT": "false",
+        "KC_HOSTNAME_STRICT_HTTPS": "false",
+        "KC_HTTP_ENABLED": "true",
+        "KC_HEALTH_ENABLED": "true",
+        "KC_METRICS_ENABLED": "true"
+      },
+      "access_url_pattern": "http://localhost:{port}/admin/master/console/",
+      "supported_versions": ["20.0.5", "21.1.2", "22.0.5", "23.0.3"]
+    },
+    "sailpoint": {
+      "name": "SailPoint IdentityIQ",
+      "version": "8.4",
+      "image": "sailpoint/identityiq:8.4",
+      "container_prefix": "iamaas-sailpoint-",
+      "admin_user": "admin",
+      "default_port": 8080,
+      "health_check": {
+        "interval": 30000000000,
+        "timeout": 10000000000,
+        "retries": 3,
+        "start_period": 60000000000
+      },
+      "environment": {
+        "DB_TYPE": "postgresql",
+        "DB_HOST": "postgres",
+        "DB_PORT": "5432",
+        "DB_NAME": "identityiq",
+        "DB_USER": "identityiq",
+        "DB_PASSWORD": "identityiq"
+      },
+      "access_url_pattern": "http://localhost:{port}/identityiq/",
+      "supported_versions": ["8.3", "8.4", "8.5"]
+    },
+    "okta": {
+      "name": "Okta Developer Console",
+      "version": "latest",
+      "image": "okta/okta-developer-console:latest",
+      "container_prefix": "iamaas-okta-",
+      "admin_user": "admin",
+      "default_port": 3000,
+      "health_check": {
+        "interval": 30000000000,
+        "timeout": 10000000000,
+        "retries": 3,
+        "start_period": 60000000000
+      },
+      "environment": {
+        "OKTA_ORG_URL": "https://dev-{sandbox_id}.okta.com",
+        "OKTA_API_TOKEN": "{api_token}"
+      },
+      "access_url_pattern": "http://localhost:{port}/",
+      "supported_versions": ["latest"]
+    },
+    "azure_ad": {
+      "name": "Azure AD B2C",
+      "version": "latest",
+      "image": "microsoft/azure-ad-b2c:latest",
+      "container_prefix": "iamaas-azure-ad-",
+      "admin_user": "admin",
+      "default_port": 3000,
+      "health_check": {
+        "interval": 30000000000,
+        "timeout": 10000000000,
+        "retries": 3,
+        "start_period": 60000000000
+      },
+      "environment": {
+        "AZURE_TENANT_ID": "{tenant_id}",
+        "AZURE_CLIENT_ID": "{client_id}",
+        "AZURE_CLIENT_SECRET": "{client_secret}"
+      },
+      "access_url_pattern": "http://localhost:{port}/",
+      "supported_versions": ["latest"]
+    }
+  },
+  "infrastructure": {
+    "network": {
+      "name": "iamaas-network",
+      "driver": "bridge",
+      "subnet": "172.20.0.0/16"
+    },
+    "port_range": {
+      "start": 8080,
+      "end": 8099,
+      "max_sandboxes": 20
+    },
+    "storage": {
+      "postgres_data": "/var/lib/postgresql/data",
+      "keycloak_data": "/opt/keycloak/data",
+      "sailpoint_data": "/opt/sailpoint/data",
+      "okta_data": "/opt/okta/data",
+      "azure_ad_data": "/opt/azure-ad/data"
+    }
+  }
+} 

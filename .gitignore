@@ -60,9 +60,6 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
-.env
-
 # IDE
 .vscode/
 .idea/
@@ -90,14 +87,12 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Next.js cache
-.next/
-out/
-
 # Docker volumes
-postgres_data/ 
+postgres_data/
+
+# Keycloak data
+keycloak_data/
+
+# Test files
+test_*.py
+*_test.py 

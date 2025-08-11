@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Integer, Text, ForeignKey, Float
+from sqlalchemy import Column, String, DateTime, Integer, Text, ForeignKey, Float, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -12,9 +12,12 @@ class Sandbox(Base):
     description = Column(Text, nullable=True)
     status = Column(String, default="pending", nullable=False)  # pending, running, stopped, expired, cancelled
     container_id = Column(String, nullable=True)
+    container_name = Column(String, nullable=True)  # Nom du conteneur Docker
     access_url = Column(String, nullable=True)
     admin_username = Column(String, nullable=True)
     admin_password = Column(String, nullable=True)
+    port = Column(Integer, nullable=True)  # Port d'accès
+    software_version = Column(String, nullable=True)  # Version du logiciel
     price = Column(Float, nullable=False, default=0.0)
     currency = Column(String, default="eur", nullable=False)  # eur, usd, etc.
     payment_status = Column(String, default="pending", nullable=False)  # pending, paid, failed, refunded
@@ -26,6 +29,9 @@ class Sandbox(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True), nullable=False)
     duration_hours = Column(Integer, nullable=False)
+    
+    # Métadonnées supplémentaires pour la flexibilité
+    sandbox_metadata = Column(JSON, nullable=True)  # Stockage de métadonnées spécifiques au logiciel
     
     # Relationships
     user = relationship("User", back_populates="sandboxes")

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/contexts/ThemeContext'
 import ConfirmModal from './ConfirmModal'
+import { apiService } from '@/services/api'
 
 interface Role {
   id: string
@@ -13,11 +14,7 @@ interface Role {
   updated_at?: string
 }
 
-interface RoleManagementProps {
-  token: string
-}
-
-export default function RoleManagement({ token }: RoleManagementProps) {
+export default function RoleManagement() {
   const { theme } = useTheme()
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,18 +35,7 @@ export default function RoleManagement({ token }: RoleManagementProps) {
   const fetchRoles = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:8000/api/v1/admin/roles', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des rôles')
-      }
-      
-      const data = await response.json()
+      const data = await apiService.getRoles()
       setRoles(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
@@ -60,19 +46,7 @@ export default function RoleManagement({ token }: RoleManagementProps) {
 
   const handleCreateRole = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/admin/roles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la création du rôle')
-      }
-      
+      await apiService.createRole(formData)
       setShowCreateModal(false)
       setFormData({ name: '', description: '' })
       fetchRoles()
@@ -85,19 +59,7 @@ export default function RoleManagement({ token }: RoleManagementProps) {
     if (!selectedRole) return
     
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/admin/roles/${selectedRole.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la modification du rôle')
-      }
-      
+      await apiService.updateRole(selectedRole.id, formData)
       setShowEditModal(false)
       setSelectedRole(null)
       setFormData({ name: '', description: '' })
@@ -116,17 +78,7 @@ export default function RoleManagement({ token }: RoleManagementProps) {
     if (!selectedRole) return
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/admin/roles/${selectedRole.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la suppression du rôle')
-      }
-      
+      await apiService.deleteRole(selectedRole.id)
       setShowDeleteModal(false)
       setSelectedRole(null)
       fetchRoles()

@@ -2,148 +2,111 @@
 
 import { useState, useEffect } from 'react'
 import { apiService } from '@/services/api'
-import { ClockIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline'
-import DeleteModal from './DeleteModal'
-import SandboxFilters, { SandboxFilters as SandboxFiltersType } from './SandboxFilters'
+import ConfirmModal from './ConfirmModal'
+import ErrorModal from './ErrorModal'
+import SuccessModal from './SuccessModal'
 
 interface Sandbox {
   id: string
   name: string
   email: string
+  duration_hours: number
   status: 'running' | 'stopped' | 'expired'
   price: number
   user_id: string
-  software_type: 'keycloak'
+  software_type_id: string
   created_at: string
   expires_at: string
   access_url: string
   admin_username?: string
+  admin_password?: string
   container_id?: string
   description?: string
 }
 
 export default function SandboxList() {
   const [sandboxes, setSandboxes] = useState<Sandbox[]>([])
-  const [filteredSandboxes, setFilteredSandboxes] = useState<Sandbox[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filters, setFilters] = useState<SandboxFiltersType>({})
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean
-    sandboxId: string | null
-    sandboxName: string
-    isLoading: boolean
-  }>({
-    isOpen: false,
-    sandboxId: null,
-    sandboxName: '',
-    isLoading: false
-  })
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [sandboxToDelete, setSandboxToDelete] = useState<Sandbox | null>(null)
+  const [fixPasswordModalOpen, setFixPasswordModalOpen] = useState(false)
+  const [sandboxToFix, setSandboxToFix] = useState<Sandbox | null>(null)
+  const [fixingPassword, setFixingPassword] = useState(false)
 
   useEffect(() => {
-    loadSandboxes()
+    fetchSandboxes()
   }, [])
 
-  // Appliquer les filtres quand les sandboxes ou les filtres changent
-  useEffect(() => {
-    let filtered = [...sandboxes]
-
-    // Filtre par recherche
-    if (filters.search) {
-      filtered = filtered.filter(sandbox =>
-        sandbox.name.toLowerCase().includes(filters.search!.toLowerCase())
-      )
-    }
-
-    // Filtre par statut
-    if (filters.status) {
-      filtered = filtered.filter(sandbox => sandbox.status === filters.status)
-    }
-
-    // Filtre par type de logiciel
-    if (filters.software_type) {
-      filtered = filtered.filter(sandbox => sandbox.software_type === filters.software_type)
-    }
-
-    setFilteredSandboxes(filtered)
-  }, [sandboxes, filters])
-
-  const loadSandboxes = async () => {
+  const fetchSandboxes = async () => {
     try {
+      setLoading(true)
       const data = await apiService.getSandboxes()
       setSandboxes(data)
     } catch (err) {
       setError('Erreur lors du chargement des sandboxes')
+      console.error('Erreur:', err)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const handleFiltersChange = (newFilters: SandboxFiltersType) => {
-    setFilters(newFilters)
+  const handleDelete = (sandbox: Sandbox) => {
+    setSandboxToDelete(sandbox)
+    setDeleteModalOpen(true)
   }
 
-  const handleDeleteClick = (id: string, name: string) => {
-    setDeleteModal({
-      isOpen: true,
-      sandboxId: id,
-      sandboxName: name,
-      isLoading: false
-    })
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (!deleteModal.sandboxId) return
-
-    setDeleteModal(prev => ({ ...prev, isLoading: true }))
+  const confirmDelete = async () => {
+    if (!sandboxToDelete) return
 
     try {
-      await apiService.deleteSandbox(deleteModal.sandboxId)
-      setSandboxes(prev => prev.filter(sb => sb.id !== deleteModal.sandboxId))
-      setDeleteModal({
-        isOpen: false,
-        sandboxId: null,
-        sandboxName: '',
-        isLoading: false
-      })
+      await apiService.deleteSandbox(sandboxToDelete.id)
+      setSandboxes(sandboxes.filter(s => s.id !== sandboxToDelete.id))
+      setDeleteModalOpen(false)
+      setSandboxToDelete(null)
     } catch (err) {
-      alert('Erreur lors de la suppression')
-      setDeleteModal(prev => ({ ...prev, isLoading: false }))
+      setError('Erreur lors de la suppression')
+      console.error('Erreur:', err)
     }
   }
 
-  const handleDeleteCancel = () => {
-    setDeleteModal({
-      isOpen: false,
-      sandboxId: null,
-      sandboxName: '',
-      isLoading: false
-    })
+  const handleFixPassword = (sandbox: Sandbox) => {
+    setSandboxToFix(sandbox)
+    setFixPasswordModalOpen(true)
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'running':
-        return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
-      case 'stopped':
-        return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
-      case 'expired':
-        return 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-      default:
-        return 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200'
-    }
-  }
+  const confirmFixPassword = async () => {
+    if (!sandboxToFix) return
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'running':
-        return 'En cours'
-      case 'stopped':
-        return 'Arrêtée'
-      case 'expired':
-        return 'Expirée'
-      default:
-        return 'Inconnu'
+    try {
+      setFixingPassword(true)
+      // Note: Il n'y a pas de méthode spécifique pour fix-password dans apiService
+      // On utilise une requête directe pour l'instant
+      const response = await fetch(`/api/v1/sandboxes/${sandboxToFix.id}/fix-password`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la correction du mot de passe')
+      }
+      
+      const updatedSandbox = await response.json()
+      
+      // Mettre à jour la sandbox dans la liste
+      setSandboxes(sandboxes.map(s => 
+        s.id === sandboxToFix.id ? updatedSandbox : s
+      ))
+      
+      setFixPasswordModalOpen(false)
+      setSandboxToFix(null)
+    } catch (err) {
+      setError('Erreur lors de la correction du mot de passe')
+      console.error('Erreur:', err)
+    } finally {
+      setFixingPassword(false)
     }
   }
 
@@ -151,134 +114,148 @@ export default function SandboxList() {
     return new Date(dateString).toLocaleString('fr-FR')
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Chargement...</div>
-      </div>
-    )
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'running':
+        return 'text-green-600 bg-green-100'
+      case 'stopped':
+        return 'text-red-600 bg-red-100'
+      case 'expired':
+        return 'text-gray-600 bg-gray-100'
+      default:
+        return 'text-gray-600 bg-gray-100'
+    }
   }
 
-  if (error) {
+  if (loading) {
     return (
-      <div className="text-center">
-        <div className="text-red-600 mb-4">{error}</div>
-        <button onClick={loadSandboxes} className="btn-primary">
-          Réessayer
-        </button>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
   if (sandboxes.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-500 mb-4">Aucune sandbox trouvée</div>
-        <p className="text-gray-400">Créez votre première sandbox pour commencer</p>
+      <div className="text-center py-8">
+        <p className="text-gray-500">Aucune sandbox trouvée</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Mes sandboxes</h2>
-        <button onClick={loadSandboxes} className="btn-secondary">
-          Actualiser
-        </button>
-      </div>
-
-      {/* Filtres */}
-      <SandboxFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        activeFiltersCount={Object.keys(filters).filter(key => filters[key as keyof SandboxFiltersType]).length}
-      />
-
-      {/* Résultats */}
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {filteredSandboxes.length} sandbox{filteredSandboxes.length !== 1 ? 's' : ''} trouvée{filteredSandboxes.length !== 1 ? 's' : ''}
-        </p>
-      </div>
-
-      {filteredSandboxes.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-gray-500 mb-4">Aucune sandbox ne correspond aux filtres</div>
-          <button onClick={() => setFilters({})} className="btn-secondary">
-            Effacer les filtres
-          </button>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredSandboxes.map((sandbox) => (
-            <div key={sandbox.id} className="card">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-                  {sandbox.name}
-                </h3>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(sandbox.status)}`}>
-                  {getStatusText(sandbox.status)}
-                </span>
+    <div className="space-y-4">
+      {sandboxes.map((sandbox) => (
+        <div key={sandbox.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {sandbox.name}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {sandbox.description || 'Aucune description'}
+              </p>
+              
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Statut:</span>
+                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getStatusColor(sandbox.status)}`}>
+                    {sandbox.status}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Durée:</span>
+                  <span className="ml-2 text-gray-900 dark:text-white">{sandbox.duration_hours}h</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Prix:</span>
+                  <span className="ml-2 text-gray-900 dark:text-white">{sandbox.price}€</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Expire le:</span>
+                  <span className="ml-2 text-gray-900 dark:text-white">
+                    {formatDate(sandbox.expires_at)}
+                  </span>
+                </div>
               </div>
 
-              {sandbox.description && (
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
-                  {sandbox.description}
-                </p>
+              {sandbox.admin_username && (
+                <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">Identifiants d'accès:</h4>
+                  <div className="space-y-1 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Utilisateur:</span>
+                      <span className="ml-2 text-gray-900 dark:text-white">{sandbox.admin_username}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Mot de passe:</span>
+                      <span className="ml-2 text-gray-900 dark:text-white">
+                        {sandbox.admin_password || 'Non disponible'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               )}
 
-              <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
-                <div className="flex items-center">
-                  <ClockIcon className="h-4 w-4 mr-2" />
-                  <span>Créée le {formatDate(sandbox.created_at)}</span>
-                </div>
-                <div className="flex items-center">
-                  <ClockIcon className="h-4 w-4 mr-2" />
-                  <span>Expire le {formatDate(sandbox.expires_at)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
-                    {sandbox.software_type}
-                  </span>
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                    {sandbox.price.toFixed(2)} €
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                {sandbox.status === 'running' && (
+              {sandbox.access_url && (
+                <div className="mt-4">
                   <a
                     href={sandbox.access_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn-primary flex-1 flex items-center justify-center"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                   >
-                    <EyeIcon className="h-4 w-4 mr-2" />
-                    Accéder
+                    Accéder à la sandbox
                   </a>
-                )}
-                <button
-                  onClick={() => handleDeleteClick(sandbox.id, sandbox.name)}
-                  className="btn-secondary flex items-center justify-center px-3"
-                  title="Supprimer"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
-              </div>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* Modale de suppression */}
-      <DeleteModal
-        isOpen={deleteModal.isOpen}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        sandboxName={deleteModal.sandboxName}
-        isLoading={deleteModal.isLoading}
+            <div className="flex space-x-2 ml-4">
+              {sandbox.status === 'running' && sandbox.admin_password === 'admin' && (
+                <button
+                  onClick={() => handleFixPassword(sandbox)}
+                  className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
+                >
+                  Corriger mot de passe
+                </button>
+              )}
+              <button
+                onClick={() => handleDelete(sandbox)}
+                className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Confirmer la suppression"
+        message={`Êtes-vous sûr de vouloir supprimer la sandbox "${sandboxToDelete?.name}" ?`}
+      />
+
+      {/* Modal de confirmation de correction du mot de passe */}
+      <ConfirmModal
+        isOpen={fixPasswordModalOpen}
+        onClose={() => setFixPasswordModalOpen(false)}
+        onConfirm={confirmFixPassword}
+        title="Corriger le mot de passe"
+        message={`Voulez-vous corriger le mot de passe de la sandbox "${sandboxToFix?.name}" ?`}
+        confirmText={fixingPassword ? "Correction en cours..." : "Corriger"}
+        disabled={fixingPassword}
+      />
+
+      {/* Modal d'erreur */}
+      <ErrorModal
+        isOpen={!!error}
+        onClose={() => setError(null)}
+        message={error || ''}
       />
     </div>
   )

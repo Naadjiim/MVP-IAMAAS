@@ -24,7 +24,7 @@ class PaymentIntentResponse(BaseModel):
     client_secret: str
     amount: int  # Montant en centimes
     currency: str
-    sandbox_id: str
+    sandbox_id: Optional[str] = None  # Optionnel car la sandbox n'existe pas encore
 
 class SandboxResponse(SandboxBase):
     id: str

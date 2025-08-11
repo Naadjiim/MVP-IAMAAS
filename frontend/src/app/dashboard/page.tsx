@@ -120,17 +120,13 @@ export default function DashboardPage() {
         {/* Content */}
         <main className="flex-1 px-6 pb-6 pt-4 overflow-auto">
           {activeTab === 'dashboard' && <Dashboard />}
-          {activeTab === 'create' && (
-            <div className="max-w-2xl mx-auto">
-              <SandboxForm />
-            </div>
-          )}
+          {activeTab === 'create' && <SandboxForm />}
           {activeTab === 'list' && <SandboxList />}
           {activeTab === 'all-sandboxes' && user?.roles.includes('admin') && <AdminSandboxList />}
           {activeTab === 'users' && user?.roles.includes('admin') && <UserManagement />}
-          {activeTab === 'roles' && user?.roles.includes('admin') && <RoleManagement token={localStorage.getItem('auth_token') || ''} />}
-          {activeTab === 'software-types' && user?.roles.includes('admin') && <SoftwareTypeManagement token={localStorage.getItem('auth_token') || ''} />}
-          {activeTab === 'pricing' && user?.roles.includes('admin') && <PricingManagement token={localStorage.getItem('auth_token') || ''} />}
+          {activeTab === 'roles' && user?.roles.includes('admin') && <RoleManagement />}
+          {activeTab === 'software-types' && user?.roles.includes('admin') && <SoftwareTypeManagement />}
+          {activeTab === 'pricing' && user?.roles.includes('admin') && <PricingManagement />}
         </main>
       </div>
     </div>

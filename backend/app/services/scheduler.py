@@ -6,7 +6,13 @@ from app.database import SessionLocal
 from app.models.sandbox import Sandbox
 from app.services.docker_service import DockerService
 from app.services.email_service import EmailService
+from app.services.stripe_service import StripeService
 import time
+import stripe
+import os
+
+# Configuration Stripe
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY', 'sk_test_...')
 
 class SchedulerService:
     def __init__(self):
@@ -37,6 +43,7 @@ class SchedulerService:
                 # Exécuter les tâches de planification
                 asyncio.run(self._check_expired_sandboxes())
                 asyncio.run(self._send_expiration_warnings())
+                asyncio.run(self._cleanup_abandoned_payments())
                 
                 # Attendre 5 minutes avant la prochaine vérification
                 for _ in range(300):  # 300 secondes = 5 minutes
@@ -63,8 +70,12 @@ class SchedulerService:
                     print(f"Nettoyage de la sandbox expirée: {sandbox.name} (ID: {sandbox.id})")
                     
                     # Arrêter et supprimer le conteneur
-                    if sandbox.container_id:
-                        await self.docker_service.delete_container(sandbox.container_id)
+                    if sandbox.container_name:
+                        try:
+                            await self.docker_service.delete_keycloak_container(sandbox.container_name)
+                        except Exception as e:
+                            print(f"Erreur lors de la suppression du conteneur {sandbox.container_name}: {str(e)}")
+                            # Continuer même si la suppression du conteneur échoue
                     
                     # Marquer comme expirée
                     sandbox.status = "expired"
@@ -116,6 +127,34 @@ class SchedulerService:
             print(f"Erreur lors de l'envoi des avertissements d'expiration: {str(e)}")
         finally:
             db.close()
+    
+    async def _cleanup_abandoned_payments(self):
+        """Nettoyer les intentions de paiement Stripe abandonnées"""
+        try:
+            # Récupérer les intentions de paiement créées il y a plus de 24h
+            cutoff_time = datetime.utcnow() - timedelta(hours=24)
+            cutoff_timestamp = int(cutoff_time.timestamp())
+            
+            # Lister les intentions de paiement (sans metadata car non supporté par l'API)
+            payment_intents = stripe.PaymentIntent.list(
+                created={'lt': cutoff_timestamp},
+                limit=100
+            )
+            
+            for payment_intent in payment_intents.data:
+                # Vérifier si c'est une intention de paiement IAMAAS
+                if (payment_intent.metadata and 
+                    payment_intent.metadata.get('service') == 'iamaas_sandbox' and
+                    payment_intent.status in ['requires_payment_method', 'requires_confirmation', 'requires_action']):
+                    try:
+                        # Annuler l'intention de paiement
+                        stripe.PaymentIntent.cancel(payment_intent.id)
+                        print(f"Intention de paiement abandonnée annulée: {payment_intent.id}")
+                    except Exception as e:
+                        print(f"Erreur lors de l'annulation de l'intention de paiement {payment_intent.id}: {str(e)}")
+                        
+        except Exception as e:
+            print(f"Erreur lors du nettoyage des paiements abandonnés: {str(e)}")
 
 # Instance globale du planificateur
 scheduler = SchedulerService()

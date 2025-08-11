@@ -108,7 +108,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const checkAuth = async () => {
       try {
         const token = getToken()
-        console.log('Token trouvé:', token ? 'Oui' : 'Non')
         
         if (token && token.trim() !== '') {
           // Vérifier l'inactivité avant de récupérer les données utilisateur
@@ -129,9 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setLastActivity(lastActivityTime)
           }
           
-          console.log('Tentative de récupération des données utilisateur...')
           const userData = await apiService.getCurrentUser()
-          console.log('Données utilisateur récupérées:', userData)
           setUser(userData)
           updateActivity() // Mettre à jour l'activité après connexion réussie
         } else {

@@ -24,7 +24,7 @@ Le MVP permet :
 ## ⚙️ Stack technique
 
 ### 🖥️ Frontend
-- **React** avec Next.js (ou Vite)
+- **React** avec Next.js
 - Interface utilisateur simple (formulaire de déploiement, tableau de bord des sandboxes)
 - Auth utilisateur par magic link ou compte simple
 - Communication avec le backend via API REST
@@ -36,11 +36,11 @@ Le MVP permet :
   - Gestion TTL / destruction auto
   - Envoi des liens d'accès
 - Base de données : **PostgreSQL**
-- Intégration email (SendGrid ou Mailgun) pour notifications
+- Intégration email (SendGrid) pour notifications
 
 ### 📦 Infrastructure / DevOps
 - **Docker Desktop** : sandbox locale de Keycloak
-- **Docker Compose** : gestion des conteneurs (Keycloak + DB si besoin)
+- **Docker Compose** : gestion des conteneurs (Keycloak + DB)
 - Déploiement cloud futur : **AWS EC2 / Terraform** (non MVP)
 - Journaux et logs : stdout / fichiers / CloudWatch (plus tard)
 
@@ -53,6 +53,7 @@ Le MVP permet :
 - [x] Génération d'un lien d'accès
 - [x] Expiration automatique de la sandbox (TTL)
 - [x] Dashboard utilisateur minimal (statut, durée, suppression)
+- [x] Intégration Stripe pour paiements
 - [ ] Multi-version Keycloak (étape future)
 - [ ] Upload BYOL (ex. SailPoint) (non inclus dans MVP)
 
@@ -62,26 +63,33 @@ Le MVP permet :
 
 ```plaintext
 MVP-IAMAAS/
-├── frontend/                 # Application React (Next.js ou Vite)
-│   ├── public/              # Assets publics (favicon, logos, etc.)
-│   └── src/
-│       ├── components/      # Composants UI réutilisables
-│       ├── pages/           # Pages (formulaire, dashboard)
-│       └── services/        # Appels à l'API FastAPI
+├── frontend/                 # Application React (Next.js)
+│   ├── src/
+│   │   ├── app/             # Pages Next.js 13+
+│   │   ├── components/      # Composants UI réutilisables
+│   │   ├── contexts/        # Contextes React
+│   │   └── services/        # Appels à l'API FastAPI
+│   ├── package.json         # Dépendances Node.js
+│   └── Dockerfile           # Image Docker frontend
 │
 ├── backend/                 # Application FastAPI (Python)
 │   ├── app/
 │   │   ├── api/             # Routes API (REST)
 │   │   ├── services/        # Logique métier (sandbox, TTL, etc.)
 │   │   ├── models/          # Schémas Pydantic et ORM
+│   │   ├── schemas/         # Schémas de validation
 │   │   └── main.py          # Point d'entrée FastAPI
-│   └── requirements.txt     # Dépendances Python
+│   ├── requirements.txt     # Dépendances Python
+│   └── Dockerfile           # Image Docker backend
 │
-├── docker/
-│   └── keycloak/            # Dockerfiles personnalisés, scripts init
+├── infra/                   # Infrastructure Keycloak
+│   ├── scripts/             # Scripts de création/suppression
+│   ├── config/              # Configuration ports et réseau
+│   └── README.md            # Documentation infrastructure
 │
-├── docker-compose.yml       # Environnement local complet (Keycloak, DB, etc.)
-├── .env                     # Variables d'environnement
+├── docker-compose.yml       # Environnement local complet
+├── .env.example             # Variables d'environnement
+├── KEYCLOAK_DEV_MODE.md     # Configuration Keycloak
 └── README.md                # Ce fichier
 ```
 
@@ -98,25 +106,19 @@ MVP-IAMAAS/
 
 1. **Cloner le repository**
 ```bash
-git clone https://github.com/Naadjiim/MVP-IAMAAS.git
+git clone <repository-url>
 cd MVP-IAMAAS
 ```
 
-2. **Lancer le script de configuration automatique**
+2. **Configurer les variables d'environnement**
 ```bash
-./scripts/setup.sh
+cp .env.example .env
+# Éditer .env avec vos clés API (Stripe, SendGrid, etc.)
 ```
 
-3. **Ou lancer manuellement avec Docker Compose**
+3. **Lancer l'application**
 ```bash
-# Copier le fichier d'environnement
-cp env.example .env
-
-# Lancer tous les services
-docker-compose up --build -d
-
-# Vérifier que tout fonctionne
-docker-compose ps
+docker-compose up -d
 ```
 
 4. **Accéder à l'application**
@@ -126,184 +128,35 @@ docker-compose ps
 
 ---
 
-## 🧪 Lancer le projet en local (développement)
+## 🔧 Configuration Keycloak
 
-> Prérequis : Docker Desktop, Node.js 18+, Python 3.11+, pip, Docker Compose
+Pour accéder aux sandboxes Keycloak créées :
 
-```bash
-# 1. Cloner le repo
-git clone https://github.com/Naadjiim/MVP-IAMAAS.git
-cd mvp-iamaas
+1. **URL d'accès :** `http://localhost:8080/admin/master/console/`
+2. **Identifiants :** `admin` / `[mot_de_passe_généré]`
 
-# 2. Lancer les containers (Keycloak + DB)
-docker-compose up --build
-
-# 3. Lancer le frontend (dans un autre terminal)
-cd frontend
-npm install
-npm run dev
-
-# 4. Lancer le backend (dans un autre terminal)
-cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+Voir `KEYCLOAK_DEV_MODE.md` pour plus de détails.
 
 ---
 
-## 🔧 Configuration
+## 📚 Documentation
 
-### Variables d'environnement
-
-Copiez le fichier `env.example` vers `.env` et configurez :
-
-```bash
-# Configuration de la base de données
-DATABASE_URL=postgresql://iamaas:iamaas@localhost:5432/iamaas
-
-# Configuration SendGrid pour les emails (optionnel)
-SENDGRID_API_KEY=your_sendgrid_api_key_here
-FROM_EMAIL=noreply@iamaas.com
-FROM_NAME=IAMAAS Platform
-
-# Configuration du frontend
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-### Configuration SendGrid (optionnel)
-
-Pour activer les notifications par email :
-
-1. Créez un compte sur [SendGrid](https://sendgrid.com/)
-2. Générez une clé API
-3. Ajoutez la clé dans le fichier `.env`
-
-### 🧪 Cartes de test Stripe
-
-Pour tester les paiements en mode développement, utilisez ces cartes de test Stripe :
-
-#### ✅ Paiements réussis
-- **Visa** : `4242 4242 4242 4242`
-- **Mastercard** : `5555 5555 5555 4444`
-- **American Express** : `3782 822463 10005`
-
-#### ❌ Paiements échoués
-- **Carte refusée** : `4000 0000 0000 0002`
-- **Carte expirée** : `4000 0000 0000 0069`
-- **Carte incorrecte** : `4000 0000 0000 0127`
-
-#### 📝 Informations communes pour tous les tests
-- **Date d'expiration** : N'importe quelle date future (ex: `12/25`)
-- **CVC** : N'importe quels 3 chiffres (ex: `123`)
-- **Code postal** : N'importe quel code postal (ex: `12345`)
-
-> **Note** : Ces cartes ne fonctionnent qu'en mode test. En production, utilisez de vraies cartes bancaires.
+- [Configuration Keycloak](KEYCLOAK_DEV_MODE.md)
+- [Base de données](bdd.md)
+- [Tâches de production](todo_prod.md)
 
 ---
 
-## 📚 API Documentation
+## 🤝 Contribution
 
-Une fois le backend démarré, la documentation interactive est disponible sur :
-- Swagger UI : http://localhost:8000/docs
-- ReDoc : http://localhost:8000/redoc
-
-### Endpoints principaux
-
-- `POST /api/v1/sandboxes/` - Créer une nouvelle sandbox
-- `GET /api/v1/sandboxes/` - Lister toutes les sandboxes
-- `GET /api/v1/sandboxes/{id}` - Récupérer une sandbox
-- `DELETE /api/v1/sandboxes/{id}` - Supprimer une sandbox
-- `PUT /api/v1/sandboxes/{id}` - Mettre à jour une sandbox
-
----
-
-## 🐳 Commandes Docker utiles
-
-```bash
-# Voir les logs en temps réel
-docker-compose logs -f
-
-# Voir les logs d'un service spécifique
-docker-compose logs -f backend
-
-# Arrêter tous les services
-docker-compose down
-
-# Arrêter et supprimer les volumes
-docker-compose down -v
-
-# Reconstruire un service
-docker-compose up --build backend
-
-# Voir l'état des services
-docker-compose ps
-```
-
----
-
-## 🔍 Dépannage
-
-### Problèmes courants
-
-1. **Ports déjà utilisés**
-   - Vérifiez qu'aucun service n'utilise les ports 3000, 8000, 5432
-   - Modifiez les ports dans `docker-compose.yml` si nécessaire
-
-2. **Erreur de connexion à la base de données**
-   - Attendez que PostgreSQL soit complètement démarré
-   - Vérifiez les logs : `docker-compose logs postgres`
-
-3. **Conteneurs Keycloak ne démarrent pas**
-   - Vérifiez que Docker Desktop a suffisamment de ressources
-   - Consultez les logs : `docker-compose logs backend`
-
-4. **Emails non envoyés**
-   - Vérifiez la configuration SendGrid dans `.env`
-   - Les emails sont optionnels, l'application fonctionne sans
-
----
-
-## 🚧 Développement
-
-### Structure du code
-
-- **Frontend** : Composants React avec TypeScript et Tailwind CSS
-- **Backend** : API FastAPI avec SQLAlchemy et Pydantic
-- **Services** : Docker, Email, Planificateur de tâches
-
-### Ajouter de nouvelles fonctionnalités
-
-1. **Backend** : Ajoutez les routes dans `backend/app/api/routes/`
-2. **Frontend** : Créez les composants dans `frontend/src/components/`
-3. **Base de données** : Modifiez les modèles dans `backend/app/models/`
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
+3. Commit les changements (`git commit -m 'Add some AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
 
 ---
 
 ## 📄 Licence
 
 Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-
----
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! N'hésitez pas à :
-
-1. Fork le projet
-2. Créer une branche pour votre fonctionnalité
-3. Commiter vos changements
-4. Pousser vers la branche
-5. Ouvrir une Pull Request
-
----
-
-## 📞 Support
-
-Pour toute question ou problème :
-- Ouvrez une issue sur GitHub
-- Consultez la documentation API
-- Vérifiez les logs Docker
-
----
-
-**🎉 Bon développement avec IAMAAS !**
